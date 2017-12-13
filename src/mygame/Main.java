@@ -229,7 +229,7 @@ public class Main extends SimpleApplication implements AnalogListener,
           physicsCharacter = new CharacterControl(new CapsuleCollisionShape(0.5f, 1.8f), .1f);
           //physicsCharacter.setPhysicsLocation(new Vector3f(0, 1, 0));
           characterNode = new Node("character node");
-          characterNode.setLocalTranslation(new Vector3f(0, 35, -500));
+          characterNode.setLocalTranslation(new Vector3f(0, 35, 0));
           Spatial model = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
           model.scale(0.25f);
           characterNode.addControl(physicsCharacter);
@@ -529,7 +529,7 @@ public class Main extends SimpleApplication implements AnalogListener,
 //    }
 
     private void createTerrain() {
-        Spatial terrain = assetManager.loadModel("Scenes/MyWorld.j3o");
+        Spatial terrain = assetManager.loadModel("Scenes/MyScene.j3o");
         terrain.addControl(new RigidBodyControl(0));
         rootNode.attachChild(terrain);
         terrain.setLocalScale(1f);
