@@ -80,8 +80,8 @@ public class Main extends SimpleApplication implements AnalogListener,
         ActionListener {
 
     private BulletAppState bulletAppState;
-    private PhysicsHoverControl hoverControl;
-    private Spatial spaceCraft;
+   
+
     TerrainQuad terrain;
     Material matRock;
     boolean wireframe = false;
@@ -90,27 +90,22 @@ public class Main extends SimpleApplication implements AnalogListener,
     Geometry lightMdl;
     Geometry collisionMarker;
     
-    private VehicleControl player;
-    private VehicleWheel fr, fl, br, bl;
-    private Node node_fr, node_fl, node_br, node_bl;
-    private float wheelRadius;
-    private float steeringValue = 0;
-    private float accelerationValue = 0;
-    private Node carNode;
-
-    private CharacterControl physicsCharacter;
-    private Node characterNode;
-    //private CameraNode camNode;
     
-    Node currentObject;
+    
+
+    //private CharacterControl physicsCharacter;
+    private Character characterObject;
+    private CameraNode camNode;
+    
+    GameObject currentObject;                               // The object you "are" (or control) at the moment, a car or characer for example. 
     PhysicsControl currentControl;
     
     float airTime = 0;
     
-    private Vector3f walkDirection = new Vector3f(0,0,0);
-    private Vector3f viewDirection = new Vector3f(0,0,0);
-    boolean  forward = false, backward = false, 
-          leftRotate = false, rightRotate = false;
+//    private Vector3f walkDirection = new Vector3f(0,0,0);
+//    private Vector3f viewDirection = new Vector3f(0,0,0);
+//    boolean  forward = false, backward = false, 
+//          leftRotate = false, rightRotate = false;
     
     public static void main(String[] args) {
         Main app = new Main();
@@ -168,7 +163,7 @@ public class Main extends SimpleApplication implements AnalogListener,
         setupKeys();
         createTerrain();
         //buildCar();
-        buildHouse();
+        //buildHouse();
         createCharacter();
 
         DirectionalLight dl = new DirectionalLight();
@@ -215,283 +210,147 @@ public class Main extends SimpleApplication implements AnalogListener,
     }
     
     private void createCharacter() {
-//        CharacterControl character;
-//        CapsuleCollisionShape capsule = new CapsuleCollisionShape(3f, 4f);
-//        character = new CharacterControl(capsule, 0.01f);
-//        Node model = (Node) assetManager.loadModel("Models/Oto/Oto.mesh.xml");
-//        //model.setLocalScale(0.5f);
-//        model.addControl(character);
-//        character.setPhysicsLocation(new Vector3f(-140, 40, -10));
-//        rootNode.attachChild(model);
-//        getPhysicsSpace().add(character);
 
-          // Add a physics character to the world
-          physicsCharacter = new CharacterControl(new CapsuleCollisionShape(0.5f, 1.8f), .1f);
+          
           //physicsCharacter.setPhysicsLocation(new Vector3f(0, 1, 0));
-          characterNode = new Node("character node");
-          characterNode.setLocalTranslation(new Vector3f(0, 35, 0));
           Spatial model = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
           model.scale(0.25f);
-          characterNode.addControl(physicsCharacter);
-          getPhysicsSpace().add(physicsCharacter);
-          rootNode.attachChild(characterNode);
-          characterNode.attachChild(model);
+          characterObject = new Character(model, "character node");
+          characterObject.setLocalTranslation(new Vector3f(0, 35, 0));
+          characterObject.addControl(characterObject.characterControl);
+          getPhysicsSpace().add(characterObject.characterControl);
+          rootNode.attachChild(characterObject);
+          characterObject.attachChild(model);
+          
           
 
           // set forward camera node that follows the character
-          CameraNode camNode = new CameraNode("CamNode", cam);
+          camNode = new CameraNode("CamNode", cam);
           camNode.setControlDir(ControlDirection.SpatialToCamera);
           camNode.setLocalTranslation(new Vector3f(0, 1, -5));
           camNode.lookAt(model.getLocalTranslation(), Vector3f.UNIT_Y);
-          characterNode.attachChild(camNode);
+          characterObject.attachChild(camNode);
 
           //disable the default 1st-person flyCam (don't forget this!!)
           flyCam.setEnabled(false);
           
-          currentObject = characterNode;
-          currentControl = physicsCharacter;
+          
+          
+          
+          currentObject = characterObject;
+          currentControl = characterObject.characterControl;
           
     }
     
     private void buildCar() {
-//        spaceCraft = assetManager.loadModel("Models/Ferrari/Car.mesh.xml");
-//        CollisionShape colShape = CollisionShapeFactory.createDynamicMeshShape(spaceCraft);
-//        spaceCraft.setShadowMode(ShadowMode.CastAndReceive);
-//        spaceCraft.setLocalTranslation(new Vector3f(-140, 50, -23));
-//        spaceCraft.setLocalRotation(new Quaternion(new float[]{0, 0.01f, 0}));
-//
-//        hoverControl = new PhysicsHoverControl(colShape, 500);
-//
-//        spaceCraft.addControl(hoverControl);
-//
-//
-//        rootNode.attachChild(spaceCraft);
-//        getPhysicsSpace().add(hoverControl);
-//        hoverControl.setCollisionGroup(PhysicsCollisionObject.COLLISION_GROUP_02);
-//
-//        ChaseCamera chaseCam = new ChaseCamera(cam, inputManager);
-//        spaceCraft.addControl(chaseCam);
-//
-//        flyCam.setEnabled(false);
-        float stiffness = 120.0f;//200=f1 car
-        float compValue = 0.2f; //(lower than damp!)
-        float dampValue = 0.3f;
-        final float mass = 400;
+
+        
 
         //Load model and get chassis Geometry
-        carNode = (Node)assetManager.loadModel("Models/Ferrari/Car.scene");
+        Node carNode = (Node)assetManager.loadModel("Models/Ferrari/Car.scene");
         carNode.setShadowMode(ShadowMode.Cast);
-        Geometry chasis = findGeom(carNode, "Car");
-        BoundingBox box = (BoundingBox) chasis.getModelBound();
-        carNode.setLocalTranslation(new Vector3f(0, 15, -500));
-
-        //Create a hull collision shape for the chassis
-        CollisionShape carHull = CollisionShapeFactory.createDynamicMeshShape(chasis);
-
-        //Create a vehicle control
-        player = new VehicleControl(carHull, mass);
-        carNode.addControl(player);
-
-        //Setting default values for wheels
-        player.setSuspensionCompression(compValue * 2.0f * FastMath.sqrt(stiffness));
-        player.setSuspensionDamping(dampValue * 2.0f * FastMath.sqrt(stiffness));
-        player.setSuspensionStiffness(stiffness);
-        player.setMaxSuspensionForce(10000);
-
-        //Create four wheels and add them at their locations
-        //note that our fancy car actually goes backwards..
-        Vector3f wheelDirection = new Vector3f(0, -1, 0);
-        Vector3f wheelAxle = new Vector3f(-1, 0, 0);
-
-        Geometry wheel_fr = findGeom(carNode, "WheelFrontRight");
-        wheel_fr.center();
-        box = (BoundingBox) wheel_fr.getModelBound();
-        wheelRadius = box.getYExtent();
-        float back_wheel_h = (wheelRadius * 1.7f) - 1f;
-        float front_wheel_h = (wheelRadius * 1.9f) - 1f;
-        player.addWheel(wheel_fr.getParent(), box.getCenter().add(0, -front_wheel_h, 0),
-                wheelDirection, wheelAxle, 0.2f, wheelRadius, true);
-
-        Geometry wheel_fl = findGeom(carNode, "WheelFrontLeft");
-        wheel_fl.center();
-        box = (BoundingBox) wheel_fl.getModelBound();
-        player.addWheel(wheel_fl.getParent(), box.getCenter().add(0, -front_wheel_h, 0),
-                wheelDirection, wheelAxle, 0.2f, wheelRadius, true);
-
-        Geometry wheel_br = findGeom(carNode, "WheelBackRight");
-        wheel_br.center();
-        box = (BoundingBox) wheel_br.getModelBound();
-        player.addWheel(wheel_br.getParent(), box.getCenter().add(0, -back_wheel_h, 0),
-                wheelDirection, wheelAxle, 0.2f, wheelRadius, false);
-
-        Geometry wheel_bl = findGeom(carNode, "WheelBackLeft");
-        wheel_bl.center();
-        box = (BoundingBox) wheel_bl.getModelBound();
-        player.addWheel(wheel_bl.getParent(), box.getCenter().add(0, -back_wheel_h, 0),
-                wheelDirection, wheelAxle, 0.2f, wheelRadius, false);
-
-        player.getWheel(2).setFrictionSlip(4);
-        player.getWheel(3).setFrictionSlip(4);
-
-        rootNode.attachChild(carNode);
-        getPhysicsSpace().add(player);
+         
+        Car carObject = new Car("Car", carNode);
         
-//        ChaseCamera chaseCam = new ChaseCamera(cam, inputManager);
-//        carNode.addControl(chaseCam);
-//
-//        flyCam.setEnabled(false);
-
-//        flyCam.setEnabled(false);
-//        // Enable a chase cam for this target (typically the player).
-//        ChaseCamera chaseCam = new ChaseCamera(cam, carNode, inputManager);
-//        chaseCam.setSmoothMotion(true);
+        carNode.setLocalTranslation(new Vector3f(0, 15, -500));
+        carObject.addControl(carObject.carControl);
+        getPhysicsSpace().add(carObject.carControl);
+        
+        carObject.attachChild(carNode);
+        rootNode.attachChild(carObject);
+        
+        
+        
 
         // Disable the default flyby cam
             flyCam.setEnabled(false);
             //create the camera Node
-            CameraNode camNode = new CameraNode("Camera Node", cam);
+            camNode = new CameraNode("Camera Node", cam);
             //This mode means that camera copies the movements of the target:
             camNode.setControlDir(ControlDirection.SpatialToCamera);
-            //Attach the camNode to the target:
-            carNode.attachChild(camNode);
-            //Move camNode, e.g. behind and above the target:
-            camNode.setLocalTranslation(new Vector3f(0, 4, 12));
-            //Rotate the camNode to look at the target:
-            camNode.lookAt(carNode.getLocalTranslation(), Vector3f.UNIT_Y);
             
-            currentControl = player;
+            //Move camNode, e.g. behind and above the target:
+            camNode.setLocalTranslation(new Vector3f(0, 1, -5));
+            //Rotate the camNode to look at the target:
+            camNode.lookAt(carObject.getLocalTranslation(), Vector3f.UNIT_Y);
+            //Attach the camNode to the target:
+            carObject.attachChild(camNode);
+            
+            currentControl = carObject.carControl;
+            currentObject = carObject;
+            
+            
+
+          //disable the default 1st-person flyCam (don't forget this!!)
+          flyCam.setEnabled(false);
+          
     }
 
-    
+   
+    private void changeControl(GameObject newObjectToControl){
+        currentObject.detachChild(camNode);
+        
+        this.currentObject = newObjectToControl;
+        
+        flyCam.setEnabled(false);
+        
+        //This mode means that camera copies the movements of the target:
+        camNode.setControlDir(ControlDirection.SpatialToCamera);
+        //Attach the camNode to the target:
+        currentObject.attachChild(camNode);
+        //Move camNode, e.g. behind and above the target:
+        camNode.setLocalTranslation(new Vector3f(0, 4, 12));
+        //Rotate the camNode to look at the target:
+        camNode.lookAt(currentObject.getLocalTranslation(), Vector3f.UNIT_Y);
+        //this.currentControl
+    }
 
     public void onAnalog(String binding, float value, float tpf) {
     }
 
-//    public void onAction(String binding, boolean value, float tpf) {
-//        if (binding.equals("Lefts")) {
-//            hoverControl.steer(value ? 50f : 0);
-//        } else if (binding.equals("Rights")) {
-//            hoverControl.steer(value ? -50f : 0);
-//        } else if (binding.equals("Ups")) {
-//            hoverControl.accelerate(value ? 100f : 0);
-//        } else if (binding.equals("Downs")) {
-//            hoverControl.accelerate(value ? -100f : 0);
-//        } else if (binding.equals("Reset")) {
-//            if (value) {
-//                System.out.println("Reset");
-//                hoverControl.setPhysicsLocation(new Vector3f(-140, 14, -23));
-//                hoverControl.setPhysicsRotation(new Matrix3f());
-//                hoverControl.clearForces();
-//            } else {
-//            }
-//        } else if (binding.equals("Space") && value) {
-//            //makeMissile();
-//        }
-//    }
+
     
     public void onAction(String binding, boolean value, float tpf) {
-        if(currentControl instanceof CharacterControl){
-            System.out.println("Hej");
-            if (binding.equals("Lefts")) {
-                if (value) {
-                    leftRotate = true;
-                } else {
-                    leftRotate = false;
-                }
-            } else if (binding.equals("Rights")) {
-                if (value) {
-                    rightRotate = true;
-                } else {
-                    rightRotate = false;
-                }
-            }
-            else if (binding.equals("Ups")) {
-                if (value) {
-                    forward = true;
-                } else {
-                    forward = false;
-                }
-            } else if (binding.equals("Downs")) {
-                if (value) {
-                    backward = true;
-                } else {
-                    backward = false;
-                }
-            } else if (binding.equals("Space")) {
-                physicsCharacter.jump();
-            }
-            
-        }
-        else if(currentControl instanceof VehicleControl){
-            if (binding.equals("Lefts")) {
-                if (value) {
-                    steeringValue += .2f;
-                } else {
-                    steeringValue += -.2f;
-                }
-                player.steer(steeringValue);
-            } else if (binding.equals("Rights")) {
-                if (value) {
-                steeringValue += -.2f;
-                } else {
-                steeringValue += .2f;
-                }
-                player.steer(steeringValue);
-            } //note that our fancy car actually goes backwards..
-            else if (binding.equals("Ups")) {
-            if (value) {
-                accelerationValue -= 800;
-            } else {
-                accelerationValue += 800;
-            }
-            player.accelerate(accelerationValue);
-            player.setCollisionShape(CollisionShapeFactory.createDynamicMeshShape(findGeom(currentObject, "Car")));
-            } else if (binding.equals("Downs")) {
-                if (value) {
-                    player.brake(40f);
-                } else {
-                    player.brake(0f);
-                }
-            } else if (binding.equals("Reset")) {
-                if (value) {
-                    System.out.println("Reset");
-                    player.setPhysicsLocation(Vector3f.ZERO);
-                    player.setPhysicsRotation(new Matrix3f());
-                    player.setLinearVelocity(Vector3f.ZERO);
-                    player.setAngularVelocity(Vector3f.ZERO);
-                    player.resetSuspension();
-                } else {
-                }
-            }
-        }
+        
+        currentObject.control(binding, value, tpf);
+        
+//        if(currentControl instanceof CharacterControl){
+//            
+//            
+//        }
+//        else if(currentControl instanceof VehicleControl){
+//            
+//        }
         
     }
 
     @Override
     public void simpleUpdate(float tpf) {
         cam.lookAt(currentObject.getWorldTranslation(), Vector3f.UNIT_Y);
-        if(currentControl instanceof CharacterControl){
+        if(currentObject instanceof Character){
+            Character character = (Character)currentObject;
             Vector3f camDir = cam.getDirection().mult(0.8f);
             Vector3f camLeft = cam.getLeft().mult(0.8f);
             camDir.y = 0;
             camLeft.y = 0;
-            viewDirection.set(camDir);
-            walkDirection.set(0, 0, 0);
+            
+            character.viewDirection.set(camDir);
+            character.walkDirection.set(0, 0, 0);
            
-            if (leftRotate) {
-                viewDirection.addLocal(camLeft.mult(0.02f));
+            if (character.leftRotate) {
+                character.viewDirection.addLocal(camLeft.mult(0.02f));
             } else
-            if (rightRotate) {
-                viewDirection.addLocal(camLeft.mult(0.02f).negate());
+            if (character.rightRotate) {
+                character.viewDirection.addLocal(camLeft.mult(0.02f).negate());
             }
-            if (forward) {
-                walkDirection.addLocal(camDir);
+            if (character.forward) {
+                character.walkDirection.addLocal(camDir);
             } else
-            if (backward) {
-                walkDirection.addLocal(camDir.negate());
+            if (character.backward) {
+                character.walkDirection.addLocal(camDir.negate());
             }
-            physicsCharacter.setWalkDirection(walkDirection);
-            physicsCharacter.setViewDirection(viewDirection);
+            character.characterControl.setWalkDirection(character.walkDirection);
+            character.characterControl.setViewDirection(character.viewDirection);
         }
             
     }
@@ -534,54 +393,6 @@ public class Main extends SimpleApplication implements AnalogListener,
         rootNode.attachChild(terrain);
         terrain.setLocalScale(1f);
         getPhysicsSpace().addAll(terrain);
-        
-//        matRock = new Material(assetManager, "Common/MatDefs/Terrain/TerrainLighting.j3md");
-//        matRock.setBoolean("useTriPlanarMapping", false);
-//        matRock.setBoolean("WardIso", true);
-//        matRock.setTexture("AlphaMap", assetManager.loadTexture("Textures/Terrain/splat/alphamap.png"));
-//        Texture heightMapImage = assetManager.loadTexture("Textures/Terrain/splat/mountains512.png");
-//        Texture grass = assetManager.loadTexture("Textures/Terrain/splat/grass.jpg");
-//        grass.setWrap(WrapMode.Repeat);
-//        matRock.setTexture("DiffuseMap", grass);
-//        matRock.setFloat("DiffuseMap_0_scale", 64);
-//        Texture dirt = assetManager.loadTexture("Textures/Terrain/splat/dirt.jpg");
-//        dirt.setWrap(WrapMode.Repeat);
-//        matRock.setTexture("DiffuseMap_1", dirt);
-//        matRock.setFloat("DiffuseMap_1_scale", 16);
-//        Texture rock = assetManager.loadTexture("Textures/Terrain/splat/road.jpg");
-//        rock.setWrap(WrapMode.Repeat);
-//        matRock.setTexture("DiffuseMap_2", rock);
-//        matRock.setFloat("DiffuseMap_2_scale", 128);
-//        Texture normalMap0 = assetManager.loadTexture("Textures/Terrain/splat/grass_normal.jpg");
-//        normalMap0.setWrap(WrapMode.Repeat);
-//        Texture normalMap1 = assetManager.loadTexture("Textures/Terrain/splat/dirt_normal.png");
-//        normalMap1.setWrap(WrapMode.Repeat);
-//        Texture normalMap2 = assetManager.loadTexture("Textures/Terrain/splat/road_normal.png");
-//        normalMap2.setWrap(WrapMode.Repeat);
-//        matRock.setTexture("NormalMap", normalMap0);
-//        matRock.setTexture("NormalMap_1", normalMap2);
-//        matRock.setTexture("NormalMap_2", normalMap2);
-//
-//        AbstractHeightMap heightmap = null;
-//        try {
-//            heightmap = new ImageBasedHeightMap(heightMapImage.getImage(), 0.25f);
-//            heightmap.load();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        terrain = new TerrainQuad("terrain", 65, 513, heightmap.getHeightMap());
-//        List<Camera> cameras = new ArrayList<Camera>();
-//        cameras.add(getCamera());
-//        TerrainLodControl control = new TerrainLodControl(terrain, cameras);
-//        terrain.addControl(control);
-//        terrain.setMaterial(matRock);
-//        terrain.setLocalScale(new Vector3f(2, 2, 2));
-//        terrain.setLocked(false); // unlock it so we can edit the height
-//
-//        terrain.setShadowMode(ShadowMode.CastAndReceive);
-//        terrain.addControl(new RigidBodyControl(0));
-//        rootNode.attachChild(terrain);
-//        getPhysicsSpace().addAll(terrain);
 
     }
 }
