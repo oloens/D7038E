@@ -5,6 +5,7 @@
  */
 package mygame;
 
+import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
 
 /**
@@ -13,10 +14,19 @@ import com.jme3.scene.Node;
  */
 public abstract class GameObject extends Node {
     
-    public GameObject(String name){
+    public Vector3f camPosition;
+    
+    public GameObject(String name, Vector3f camPosition){
         super(name);
+        this.camPosition = camPosition;
     }
     
     public abstract void control(String binding, boolean value, float tpf);
+    
+    
+    // stanna objektet (används särkilt när man bytar kamera till ett annat objekt för att förhindra att nuvarande objektet fortsätte röra sig ( finns säkert en annan lösning)) 
+    public abstract void stopMovement();
+    
+    
     
 }

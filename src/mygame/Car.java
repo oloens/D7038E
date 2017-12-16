@@ -35,23 +35,25 @@ public class Car extends GameObject{
     float dampValue = 0.3f;
     final float mass = 400;
     
-    public Car(String name, Node carNode){
-        super(name);
+    public Car(String name, Spatial carNode, Vector3f camPosition){
+        super(name, camPosition);
         
         createCar(carNode);
     }
     
-    private void createCar(Node carNode){
+    private void createCar(Spatial carNode){
         carNode.setShadowMode(RenderQueue.ShadowMode.Cast);  
         Geometry chasis = findGeom(carNode, "Car"); 
         BoundingBox box = (BoundingBox) chasis.getModelBound();
-        carNode.setLocalTranslation(new Vector3f(0, 15, -500));
+        //carNode.setLocalTranslation(new Vector3f(0, 15, -500));
         
          //Create a hull collision shape for the chassis
         CollisionShape carHull = CollisionShapeFactory.createDynamicMeshShape(chasis);
 
         //Create a vehicle control
         carControl = new VehicleControl(carHull, mass);
+        carControl.setApplyPhysicsLocal(true);
+        carControl.setPhysicsLocation(new Vector3f(0,1,0));
         
         //Setting default values for wheels
         carControl.setSuspensionCompression(compValue * 2.0f * FastMath.sqrt(stiffness));
@@ -115,47 +117,61 @@ public class Car extends GameObject{
     
     
     public void control(String binding, boolean value, float tpf){
+        System.out.println(accelerationValue + " avalue");
+        System.out.println(steeringValue + " steeringvalue");
         
-//        if (binding.equals("Lefts")) {
-//                if (value) {
-//                    steeringValue += .2f;
-//                } else {
-//                    steeringValue += -.2f;
-//                }
-//                player.steer(steeringValue);
-//            } else if (binding.equals("Rights")) {
-//                if (value) {
-//                steeringValue += -.2f;
-//                } else {
-//                steeringValue += .2f;
-//                }
-//                player.steer(steeringValue);
-//            } //note that our fancy car actually goes backwards..
-//            else if (binding.equals("Ups")) {
-//            if (value) {
-//                accelerationValue -= 800;
-//            } else {
-//                accelerationValue += 800;
-//            }
-//            player.accelerate(accelerationValue);
-//            player.setCollisionShape(CollisionShapeFactory.createDynamicMeshShape(findGeom(currentObject, "Car")));
-//            } else if (binding.equals("Downs")) {
-//                if (value) {
-//                    player.brake(40f);
-//                } else {
-//                    player.brake(0f);
-//                }
-//            } else if (binding.equals("Reset")) {
-//                if (value) {
-//                    System.out.println("Reset");
-//                    player.setPhysicsLocation(Vector3f.ZERO);
-//                    player.setPhysicsRotation(new Matrix3f());
-//                    player.setLinearVelocity(Vector3f.ZERO);
-//                    player.setAngularVelocity(Vector3f.ZERO);
-//                    player.resetSuspension();
-//                } else {
-//                }
-//            }
+        if (binding.equals("Lefts")) {
+                if (value) {
+                    steeringValue += .2f;
+                } else {
+                    steeringValue = 0;
+                }
+                carControl.steer(steeringValue);
+            } else if (binding.equals("Rights")) {
+                if (value) {
+                steeringValue += -.2f;
+                } else {
+                steeringValue = 0;
+                }
+                carControl.steer(steeringValue);
+            } //note that our fancy car actually goes backwards..
+            else if (binding.equals("Ups")) {
+                 System.out.println(value + " value");
+            if (value) {
+               
+                accelerationValue -= 800;
+            } else {
+                accelerationValue =0;
+                carControl.brake(20f);
+            }
+            carControl.accelerate(accelerationValue);
+            carControl.setCollisionShape(CollisionShapeFactory.createDynamicMeshShape(findGeom(this, "Car")));
+            } else if (binding.equals("Downs")) {
+                if (value) {
+                    carControl.brake(40f);
+                } else {
+                    carControl.brake(0f);
+                }
+            } else if (binding.equals("Reset")) {
+                if (value) {
+                    System.out.println("Reset");
+                    carControl.setPhysicsLocation(Vector3f.ZERO);
+                    carControl.setPhysicsRotation(new Matrix3f());
+                    carControl.setLinearVelocity(Vector3f.ZERO);
+                    carControl.setAngularVelocity(Vector3f.ZERO);
+                    carControl.resetSuspension();
+                } else {
+                }
+            }
+        
+    }
+    
+    public void stopMovement(){
+        System.out.println("stops car");
+        steeringValue = 0;
+        accelerationValue = 0;
+        carControl.brake(20f);
+        carControl.accelerate(accelerationValue);
         
     }
     
