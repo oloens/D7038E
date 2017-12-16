@@ -41,6 +41,8 @@ public class Car extends GameObject{
         createCar(carNode);
     }
     
+    
+    // Taget från JmeTests
     private void createCar(Spatial carNode){
         carNode.setShadowMode(RenderQueue.ShadowMode.Cast);  
         Geometry chasis = findGeom(carNode, "Car"); 
@@ -97,6 +99,8 @@ public class Car extends GameObject{
         carControl.getWheel(3).setFrictionSlip(4);
     }
     
+    
+    // Taget från JmeTests
     private Geometry findGeom(Spatial spatial, String name) {
         if (spatial instanceof Node) {
             Node node = (Node) spatial;
@@ -115,7 +119,7 @@ public class Car extends GameObject{
         return null;
     }
     
-    
+    // Taget från JmeTests
     public void control(String binding, boolean value, float tpf){
         System.out.println(accelerationValue + " avalue");
         System.out.println(steeringValue + " steeringvalue");

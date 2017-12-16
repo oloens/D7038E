@@ -29,14 +29,15 @@ public class Character extends GameObject{
     public Character(Spatial model, String name, Vector3f camPosition){
         super(name, camPosition);
         this.model = model;
-        //this.attachChild(model);
+        
         characterControl = new CharacterControl(new CapsuleCollisionShape(0.5f, 1.8f), .1f);
         characterControl.setApplyPhysicsLocal(true);
-        //characterControl.setPhysicsLocation(new Vector3f(0,1,0));
+ 
         
         
     }
     
+    // Taget från JmeTest
     public void control(String binding, boolean value, float tpf){
         System.out.println("controlling character");
             if (binding.equals("Lefts")) {
