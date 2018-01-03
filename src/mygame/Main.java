@@ -31,7 +31,9 @@
  */
 package mygame;
 
+import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
+import com.jme3.app.state.BaseAppState;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.PhysicsSpace;
@@ -86,44 +88,19 @@ import java.util.List;
 public class Main extends SimpleApplication implements AnalogListener,
         ActionListener {
 
-    private BulletAppState bulletAppState;
-   
-
-    TerrainQuad terrain;
-    Material matRock;
-    boolean wireframe = false;
-    protected BitmapText hintText;
-    PointLight pl;
-    Geometry lightMdl;
-    Geometry collisionMarker;
-    
-    
-    ArrayList<Car> carsStore = new ArrayList<Car>();        // Alla bilar, ( Kanske ska ändras till alla objekt(?))
-    private Car carObject;
-    private Car collidedCar;
-    
-    private Character characterObject;                      // Avataren man är 
-    private CameraNode camNode;
-    
-    GameObject currentObject;                               // The object you "are" (or control) at the moment, a car or characer for example. 
-    PhysicsControl currentControl;
-    
-    float airTime = 0;
-    
-    GhostControl ghostControl;                            // Används för att upptäcka kollisioner
-
-    
+    Game game;
     public static void main(String[] args) {
         Main app = new Main();
+
         app.start();
     }
-
-    private PhysicsSpace getPhysicsSpace() {
-        return bulletAppState.getPhysicsSpace();
+    public Main() {
+        game = new Game();
+        stateManager.attach(game);
     }
+    
 
     private void setupKeys() {
-
         inputManager.addMapping("Lefts", new KeyTrigger(KeyInput.KEY_A));
         inputManager.addMapping("Rights", new KeyTrigger(KeyInput.KEY_D));
         inputManager.addMapping("Ups", new KeyTrigger(KeyInput.KEY_W));
@@ -142,25 +119,87 @@ public class Main extends SimpleApplication implements AnalogListener,
 
     @Override
     public void simpleInitApp() {
+                setupKeys();
+
+    }
+    
+    // Tagen från JmeTests
+
+
+
+
+    public void onAnalog(String binding, float value, float tpf) {
+    }
+
+
+    
+    public void onAction(String binding, boolean value, float tpf) {
+        game.onAction(binding, value, tpf);
+        
+    }
+
+    @Override
+    public void simpleUpdate(float tpf) {
+        
+        //System.out.println(characterObject.characterControl.getPhysicsLocation() + " Character location physics location");
+        //System.out.println(characterObject.getLocalTranslation() + " Character location local translation");
+        
+    
+    // Laddar in en terräng från Scenes som är skapad i Scene composer
+
+    }
+}
+class Game extends BaseAppState {
+    protected BulletAppState bulletAppState;
+    private SimpleApplication sapp;
+
+    TerrainQuad terrain;
+    Material matRock;
+    boolean wireframe = false;
+    protected BitmapText hintText;
+    PointLight pl;
+    Geometry lightMdl;
+    Geometry collisionMarker;
+    
+    
+    protected ArrayList<Car> cars = new ArrayList<Car>();        // Alla bilar, ( Kanske ska ändras till alla objekt(?))
+    private Car carObject;
+    private Car collidedCar;
+    
+    private Character characterObject;                      // Avataren man är 
+    private CameraNode camNode;
+    protected ArrayList<Character> characters = new ArrayList<Character>();
+    
+    GameObject currentObject;                               // The object you "are" (or control) at the moment, a car or characer for example. 
+    PhysicsControl currentControl;
+    
+    float airTime = 0;
+    
+    GhostControl ghostControl;                            // Används för att upptäcka kollisioner
+
+    public void onDisable() {
+        
+    }
+    public void onEnable() {
         bulletAppState = new BulletAppState();
-        bulletAppState.setThreadingType(BulletAppState.ThreadingType.PARALLEL);
-        stateManager.attach(bulletAppState);
-//        bulletAppState.getPhysicsSpace().enableDebug(assetManager);
+        sapp.getStateManager().attach(bulletAppState);
+       // bulletAppState.setThreadingType(BulletAppState.ThreadingType.PARALLEL);
+        //        bulletAppState.getPhysicsSpace().enableDebug(assetManager);
         bulletAppState.getPhysicsSpace().setAccuracy(1f/30f);
      
        
-        PssmShadowRenderer pssmr = new PssmShadowRenderer(assetManager, 2048, 3);
+        PssmShadowRenderer pssmr = new PssmShadowRenderer(sapp.getAssetManager(), 2048, 3);
         pssmr.setDirection(new Vector3f(-0.5f, -0.3f, -0.3f).normalizeLocal());
         pssmr.setLambda(0.55f);
         pssmr.setShadowIntensity(0.6f);
         pssmr.setCompareMode(CompareMode.Hardware);
         pssmr.setFilterMode(FilterMode.Bilinear);
-        viewPort.addProcessor(pssmr);
+        sapp.getViewPort().addProcessor(pssmr);
 
         ghostControl = new GhostControl(new SphereCollisionShape(0.7f));
         getPhysicsSpace().add(ghostControl);
         
-        setupKeys();
+        //setupKeys();
         createTerrain();
         buildCar(new Vector3f(-20,0,-20));
         buildCar(new Vector3f(-30,0,-30));
@@ -171,16 +210,36 @@ public class Main extends SimpleApplication implements AnalogListener,
         DirectionalLight dl = new DirectionalLight();
         dl.setColor(new ColorRGBA(1.0f, 0.94f, 0.8f, 1f).multLocal(1.3f));
         dl.setDirection(new Vector3f(-0.5f, -0.3f, -0.3f).normalizeLocal());
-        rootNode.addLight(dl);
+        sapp.getRootNode().addLight(dl);
 
         Vector3f lightDir2 = new Vector3f(0.70518064f, 0.5902297f, -0.39287305f);
         DirectionalLight dl2 = new DirectionalLight();
         dl2.setColor(new ColorRGBA(0.7f, 0.85f, 1.0f, 1f));
         dl2.setDirection(lightDir2);
-        rootNode.addLight(dl2);
+        sapp.getRootNode().addLight(dl2);
+    
+
+    }
+    private void createTerrain() {
+        Spatial terrain = sapp.getAssetManager().loadModel("Scenes/MyScene.j3o");
+        RigidBodyControl rigidBodyControl = new RigidBodyControl(0);
+        terrain.addControl(rigidBodyControl);
+        //rigidBodyControl.setCollisionGroup(PhysicsCollisionObject.COLLISION_GROUP_03);
+        sapp.getRootNode().attachChild(terrain);
+        terrain.setLocalScale(1f);
+        getPhysicsSpace().addAll(terrain);
+
+    }
+    public void cleanup(Application app) {
+        
+    }
+    public void initialize(Application app) {
+        sapp = (SimpleApplication) app;
+    }
+    private PhysicsSpace getPhysicsSpace() {
+        return bulletAppState.getPhysicsSpace();
     }
     
-    // Tagen från JmeTests
     private Geometry findGeom(Spatial spatial, String name) {
         if (spatial instanceof Node) {
             Node node = (Node) spatial;
@@ -198,16 +257,15 @@ public class Main extends SimpleApplication implements AnalogListener,
         }
         return null;
     }
-
     private void buildHouse(){
-        Spatial house = assetManager.loadModel("Models/house1.j3o");
+        Spatial house = sapp.getAssetManager().loadModel("Models/house1.j3o");
         house.addControl(new RigidBodyControl(0));
-        rootNode.attachChild(house);
+        sapp.getRootNode().attachChild(house);
         house.setLocalScale(1f);
         house.setLocalTranslation(0,0,0);
         getPhysicsSpace().addAll(house);
-        Material houseWall = new Material( assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        houseWall.setTexture("ColorMap", assetManager.loadTexture("Textures/housewall1.jpg"));
+        Material houseWall = new Material(sapp.getAssetManager(), "Common/MatDefs/Misc/Unshaded.j3md");
+        houseWall.setTexture("ColorMap", sapp.getAssetManager().loadTexture("Textures/housewall1.jpg"));
         //houseWall.scaleTextureCoordinates(new Vector2f(3,6));
         house.setMaterial(houseWall);
         
@@ -215,39 +273,64 @@ public class Main extends SimpleApplication implements AnalogListener,
     
     private void createCharacter() {
 
-          Spatial model = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");   
+          Spatial model = sapp.getAssetManager().loadModel("Models/Sinbad/Sinbad.mesh.xml");   
           model.scale(0.25f);
      
           characterObject = new Character(model, "character node", new Vector3f(0, 1, -5));
-               
+          characters.add(characterObject);
           characterObject.addControl(characterObject.characterControl);
           characterObject.addControl(ghostControl);
          
           getPhysicsSpace().add(characterObject.characterControl);
           characterObject.characterControl.setPhysicsLocation(new Vector3f(-5,5,0));
           
-          rootNode.attachChild(characterObject);
+          sapp.getRootNode().attachChild(characterObject);
           characterObject.attachChild(model);
           
           // set forward camera node that follows the character
-          camNode = new CameraNode("CamNode", cam);
+          camNode = new CameraNode("CamNode", sapp.getCamera());
           camNode.setControlDir(ControlDirection.SpatialToCamera);
           camNode.setLocalTranslation(characterObject.camPosition);
           camNode.lookAt(model.getLocalTranslation(), Vector3f.UNIT_Y);
           characterObject.attachChild(camNode);
 
           //disable the default 1st-person flyCam (don't forget this!!)
-          flyCam.setEnabled(false);
+          sapp.getFlyByCamera().setEnabled(false);
 
           currentObject = characterObject;
           currentControl = characterObject.characterControl;
           
     }
+    public Character spawnEntity(String type) {
+        if (type.equals("Car")) {
+            //TODO
+        }
+        else {
+          
+          Spatial model = sapp.getAssetManager().loadModel("Models/Sinbad/Sinbad.mesh.xml");   
+          model.scale(0.25f);
+     
+          characterObject = new Character(model, "character node", new Vector3f(0, 1, -5));
+          characters.add(characterObject);
+          characterObject.addControl(characterObject.characterControl);
+          characterObject.addControl(ghostControl);
+         
+          getPhysicsSpace().add(characterObject.characterControl);
+          characterObject.characterControl.setPhysicsLocation(new Vector3f(-5,5,0));
+          
+          sapp.getRootNode().attachChild(characterObject);
+          characterObject.attachChild(model);
+          
+          return characterObject;
+
+        }
+        return null;
+    }
     
     private void buildCar(Vector3f initialPosition) {
 
         //Load model and get chassis Geometry
-        Spatial carNode = assetManager.loadModel("Models/Ferrari/Car.scene");
+        Spatial carNode = sapp.getAssetManager().loadModel("Models/Ferrari/Car.scene");
        
         carNode.setShadowMode(ShadowMode.Cast);  
         carObject = new Car("Car", carNode, new Vector3f(0, 4, 12));
@@ -258,12 +341,12 @@ public class Main extends SimpleApplication implements AnalogListener,
         getPhysicsSpace().add(carObject.carControl);
         
         carObject.attachChild(carNode);
-        rootNode.attachChild(carObject);
+        sapp.getRootNode().attachChild(carObject);
         
-        carsStore.add(carObject);       
+        cars.add(carObject);       
 
         //disable the default 1st-person flyCam (don't forget this!!)
-        flyCam.setEnabled(false);
+        sapp.getFlyByCamera().setEnabled(false);
           
     }
 
@@ -274,7 +357,7 @@ public class Main extends SimpleApplication implements AnalogListener,
         
         this.currentObject = newObjectToControl;
         
-        flyCam.setEnabled(false);
+        sapp.getFlyByCamera().setEnabled(false);
              
         camNode.setControlDir(ControlDirection.SpatialToCamera);
       
@@ -285,97 +368,40 @@ public class Main extends SimpleApplication implements AnalogListener,
         camNode.lookAt(currentObject.getLocalTranslation(), Vector3f.UNIT_Y);
 
     }
-
-    public void onAnalog(String binding, float value, float tpf) {
-    }
-
-
-    
-    public void onAction(String binding, boolean value, float tpf) {
-            
-        if (binding.equals("EnterExit")){
-            if (value) {
-                if(!characterObject.isInVehicle){                  
-                    if(collidedCar!= null){
-                       //System.out.println(collidedCar.toString()+ " collidedCaronAction");                  
-                       characterObject.characterControl.setPhysicsLocation(new Vector3f(0,1,-10));
-                       characterObject.removeFromParent();                 
-                       collidedCar.attachChild(characterObject);
-                       //System.out.println(characterObject.getParent().toString() + " PARENT OF CHARACTER");     
-                       characterObject.isInVehicle = true;           
-                       characterObject.invisible();
-                       changeControl(collidedCar);
-                    }
-                }
-                else{
-                    //System.out.println(currentObject.getLocalTranslation()+ " carlocal");
-                    //System.out.println(characterObject.getLocalTranslation() + " characterlocal");
-                  
-                    System.out.println(characterObject.getLocalTranslation() + " characterlocal");
-                    Node characterParent = characterObject.getParent();
-                    Vector3f parentsLocalTranslation = characterParent.getLocalTranslation();
-                    characterObject.removeFromParent();
-                    characterObject.characterControl.setPhysicsLocation(parentsLocalTranslation.add(-2,1,0));
-                    rootNode.attachChild(characterObject);
-              
-//              System.out.println("ContactPoint: " + " X: " + contactPoint.getX() + " Y: " + contactPoint.getY() + " Z: " + contactPoint.getZ());
-//              System.out.println("localPoint: " + " X: " + localPoint.getX() + " Y: " + localPoint.getY() + " Z: " + localPoint.getZ()); 
-                     
-                    characterObject.visible();     
-                    changeControl(characterObject);
-                    characterObject.isInVehicle = false;
-                }           
-                
-            } else {
-              
-            }
-        }
-        else{
-            System.out.println("Not exitEnter");
-            System.out.println(currentObject.toString());
-            System.out.println(binding.toString() +" : " + value);
-            currentObject.control(binding, value, tpf);
-        }
-        
-    }
-
     @Override
-    public void simpleUpdate(float tpf) {
-        
-        //System.out.println(characterObject.characterControl.getPhysicsLocation() + " Character location physics location");
-        //System.out.println(characterObject.getLocalTranslation() + " Character location local translation");
+    public void update(float tpf) {
         List<PhysicsCollisionObject> overLappingObjects = ghostControl.getOverlappingObjects();
   
         
         boolean collide = false;
-        for(int i=0; i<carsStore.size(); i++){
-            if(ghostControl.getOverlappingObjects().contains(carsStore.get(i).getControl(PhysicsControl.class))){
-                collidedCar = carsStore.get(i);
+        for(int i=0; i<cars.size(); i++){
+            if(ghostControl.getOverlappingObjects().contains(cars.get(i).getControl(PhysicsControl.class))){
+                collidedCar = cars.get(i);
                 collide = true;
                 //System.out.println("collide with car");   
                 
-                BitmapFont myFont= assetManager.loadFont("Interface/Fonts/Console.fnt");
+                BitmapFont myFont= sapp.getAssetManager().loadFont("Interface/Fonts/Console.fnt");
                 BitmapText hudText = new BitmapText(myFont, false);
                 hudText.setSize(myFont.getCharSet().getRenderedSize() * 2);
                 hudText.setColor(ColorRGBA.White);
                 hudText.setText("Press F to enter car");
-                hudText.setLocalTranslation(20, settings.getHeight()-20, 0);
-                guiNode.attachChild(hudText);
+                hudText.setLocalTranslation(20, 50/*sapp.settings.getHeight()*/-20, 0);
+                sapp.getGuiNode().attachChild(hudText);
             }
         }
         if(collide == false){
             collidedCar = null;
-            guiNode.detachAllChildren();
+            sapp.getGuiNode().detachAllChildren();
         }
      
         
-        cam.lookAt(currentObject.getWorldTranslation(), Vector3f.UNIT_Y);
+        sapp.getCamera().lookAt(currentObject.getWorldTranslation(), Vector3f.UNIT_Y);
         // Taget från JmeTests
         if(currentObject instanceof Character){
             //System.out.println("Character current");
             Character character = (Character)currentObject;
-            Vector3f camDir = cam.getDirection().mult(0.8f);
-            Vector3f camLeft = cam.getLeft().mult(0.8f);
+            Vector3f camDir = sapp.getCamera().getDirection().mult(0.8f);
+            Vector3f camLeft = sapp.getCamera().getLeft().mult(0.8f);
             camDir.y = 0;
             camLeft.y = 0;
             
@@ -405,17 +431,54 @@ public class Main extends SimpleApplication implements AnalogListener,
 
         }
             
-    }
     
-    // Laddar in en terräng från Scenes som är skapad i Scene composer
-    private void createTerrain() {
-        Spatial terrain = assetManager.loadModel("Scenes/MyScene.j3o");
-        RigidBodyControl rigidBodyControl = new RigidBodyControl(0);
-        terrain.addControl(rigidBodyControl);
-        //rigidBodyControl.setCollisionGroup(PhysicsCollisionObject.COLLISION_GROUP_03);
-        rootNode.attachChild(terrain);
-        terrain.setLocalScale(1f);
-        getPhysicsSpace().addAll(terrain);
-
     }
+        public void onAction(String binding, boolean value, float tpf) {
+            
+        if (binding.equals("EnterExit")){
+            if (value) {
+                if(!characterObject.isInVehicle){                  
+                    if(collidedCar!= null){
+                       //System.out.println(collidedCar.toString()+ " collidedCaronAction");                  
+                       characterObject.characterControl.setPhysicsLocation(new Vector3f(0,1,-10));
+                       characterObject.removeFromParent();                 
+                       collidedCar.attachChild(characterObject);
+                       //System.out.println(characterObject.getParent().toString() + " PARENT OF CHARACTER");     
+                       characterObject.isInVehicle = true;           
+                       characterObject.invisible();
+                       changeControl(collidedCar);
+                    }
+                }
+                else{
+                    //System.out.println(currentObject.getLocalTranslation()+ " carlocal");
+                    //System.out.println(characterObject.getLocalTranslation() + " characterlocal");
+                  
+                    System.out.println(characterObject.getLocalTranslation() + " characterlocal");
+                    Node characterParent = characterObject.getParent();
+                    Vector3f parentsLocalTranslation = characterParent.getLocalTranslation();
+                    characterObject.removeFromParent();
+                    characterObject.characterControl.setPhysicsLocation(parentsLocalTranslation.add(-2,1,0));
+                    sapp.getRootNode().attachChild(characterObject);
+              
+//              System.out.println("ContactPoint: " + " X: " + contactPoint.getX() + " Y: " + contactPoint.getY() + " Z: " + contactPoint.getZ());
+//              System.out.println("localPoint: " + " X: " + localPoint.getX() + " Y: " + localPoint.getY() + " Z: " + localPoint.getZ()); 
+                     
+                    characterObject.visible();     
+                    changeControl(characterObject);
+                    characterObject.isInVehicle = false;
+                }           
+                
+            } else {
+              
+            }
+        }
+        else{
+            System.out.println("Not exitEnter");
+            System.out.println(currentObject.toString());
+            System.out.println(binding.toString() +" : " + value);
+            currentObject.control(binding, value, tpf);
+        }
+        
+    }
+
 }

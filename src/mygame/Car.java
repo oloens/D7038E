@@ -12,6 +12,7 @@ import com.jme3.bullet.util.CollisionShapeFactory;
 import com.jme3.math.FastMath;
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
+import com.jme3.network.serializing.Serializable;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -21,9 +22,12 @@ import com.jme3.scene.Spatial;
  *
  * @author Anton
  */
+@Serializable
 public class Car extends GameObject{
     
-    
+    public Car() {
+        
+    }
     VehicleControl carControl;
     
     private float wheelRadius;

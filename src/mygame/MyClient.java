@@ -7,6 +7,7 @@ package mygame;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.input.KeyInput;
+import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.math.Quaternion;
@@ -24,11 +25,13 @@ import mygame.Util.MyAbstractMessage;
 import mygame.Util.StartGameMessage;
 import mygame.Util.StopGameMessage;
 import mygame.Util.UpdateMessage;
+
+
 /**
  *
  * @author olofe
  */
-public class MyClient extends SimpleApplication {
+public class MyClient extends SimpleApplication implements ActionListener, AnalogListener{
     
 
     // the connection back to the server
@@ -39,7 +42,8 @@ public class MyClient extends SimpleApplication {
 
     private MessageQueue messageQueue = new MessageQueue();
     private boolean running = false;
-
+    Game game;
+    
     public static void main(String[] args) {
         Util.initialiseSerializables();
         MyClient app = new MyClient(Util.HOSTNAME, Util.PORT);
@@ -49,18 +53,25 @@ public class MyClient extends SimpleApplication {
     public MyClient(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
-        running=false;
+        //running=false;
+        this.game = new Game();
+        stateManager.attach(game);
     }
     private void initKeys() {
-        
-        inputManager.addMapping("Left",  new KeyTrigger(KeyInput.KEY_A));
-        inputManager.addMapping("Gas",  new KeyTrigger(KeyInput.KEY_W));
-        inputManager.addMapping("Brake",  new KeyTrigger(KeyInput.KEY_S));
-        inputManager.addMapping("Right",  new KeyTrigger(KeyInput.KEY_D));
-
-        
-               
-        inputManager.addListener(analogListener, "Left", "Right", "Gas", "Brake");
+        inputManager.addMapping("Lefts", new KeyTrigger(KeyInput.KEY_A));
+        inputManager.addMapping("Rights", new KeyTrigger(KeyInput.KEY_D));
+        inputManager.addMapping("Ups", new KeyTrigger(KeyInput.KEY_W));
+        inputManager.addMapping("Downs", new KeyTrigger(KeyInput.KEY_S));
+        inputManager.addMapping("Space", new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_RETURN));
+        inputManager.addMapping("EnterExit", new KeyTrigger(KeyInput.KEY_F));
+        inputManager.addListener(this, "Lefts");
+        inputManager.addListener(this, "Rights");
+        inputManager.addListener(this, "Ups");
+        inputManager.addListener(this, "Downs");
+        inputManager.addListener(this, "Space");
+        inputManager.addListener(this, "Reset");
+        inputManager.addListener(this, "EnterExit");
         
     }
     
@@ -70,9 +81,10 @@ public class MyClient extends SimpleApplication {
     @Override
     @SuppressWarnings("CallToPrintStackTrace")
     public void simpleInitApp() {
+        initKeys();
         System.out.println("Initializing");
-        cam.setLocation(new Vector3f(-84f, 0.0f, 720f));
-        cam.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
+        //cam.setLocation(new Vector3f(-84f, 0.0f, 720f));
+        //cam.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
         setDisplayStatView(false);
         setDisplayFps(false);
 
@@ -113,39 +125,28 @@ public class MyClient extends SimpleApplication {
 
     }
 
-        private final AnalogListener analogListener = new AnalogListener() {
-        @Override
-            public void onAnalog(String name, float value, float tpf) {
-                if (running) {
-
-                    if(name.equals("Left")){
-
-
-                    }
-
-                    if(name.equals("Right")){
-
-                    }
-
-                    if(name.equals("Gas")){
-
-                    }
-
-                    if(name.equals("Brake")){
-
-                    }
-
-                }
-            }
-            
-    };
 
 
   
-
     @Override
     public void simpleUpdate(float tpf) {
-        messageQueue.enqueue(new ChangeVelocityMessage());
+        //messageQueue.enqueue(new ChangeVelocityMessage());
+        //System.out.println("x = " + game.characters.get(0).characterControl.getViewDirection().x);
+        //System.out.println(" y = " + game.characters.get(0).characterControl.getViewDirection().y);
+        //System.out.println("z = " + game.characters.get(0).characterControl.getViewDirection().z);
+        game.characters.get(0).rotate(new Quaternion(2f, 0f, 0f, 0f));
+    }
+    @Override
+    public void onAction(String name, boolean isPressed, float tpf) {
+        int id = game.characters.get(0).getID();
+        messageQueue.enqueue(new ChangeVelocityMessage(id, name, isPressed, tpf));
+        
+        //game.onAction(name, isPressed, tpf);
+    }
+
+    @Override
+    public void onAnalog(String name, float value, float tpf) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 
@@ -178,6 +179,40 @@ public class MyClient extends SimpleApplication {
                  Future result = MyClient.this.enqueue(new Callable() {
                     @Override
                     public Object call() throws Exception {
+                        boolean found;
+                        for (int i=0; i<((UpdateMessage) m).ids.length; i++) {
+                            found=false;
+                            int id = ((UpdateMessage) m).ids[i];
+                            
+                            for (int j=0; j<game.characters.size(); j++) {
+                                if (id==game.characters.get(i).getID()) {
+                                    found=true;
+                                    Character c1 = game.characters.get(i);
+                                   // c1.characterControl.
+                                    c1.characterControl.warp(((UpdateMessage) m).positions[i]);
+                                    //c1.characterControl.setViewDirection(((UpdateMessage) m).viewDirections[i]);
+                                    Quaternion t1 = c1.getLocalRotation();
+                                    //t1.lookAt(((UpdateMessage) m).viewDirections[i], Vector3f.UNIT_Y);
+                                    //c1.setLocalRotation(t1);
+                                    //c1.characterControl.update(0.01f);
+                                    System.out.println("here");
+                                    //c1.characterControl.setWalkDirection(((UpdateMessage) m).walkDirections[i]);
+                                   // Vector3f viewDir = ((UpdateMessage) m).viewDirections[i];
+                                    
+                                    //cam.setRotation(new Quaternion(viewDir.x, viewDir.y, viewDir.z, 0.0f));
+
+                                }
+                            }
+                            if (!found) {
+                                Character newchar = game.spawnEntity("Character");
+                                newchar.setID(id);
+                                newchar.characterControl.warp(((UpdateMessage) m).positions[i]);
+                                newchar.characterControl.setViewDirection(((UpdateMessage) m).viewDirections[i]);
+                                //game.characters.get(0).characterControl.setUseViewDirection(true);
+                               // game.characters.get(0).characterControl.update(0.001f);
+                            }
+                        }
+                        
                         return true;
                     }
                 });      

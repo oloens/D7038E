@@ -6,6 +6,7 @@
 package mygame;
 
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
+import com.jme3.bullet.control.BetterCharacterControl;
 import com.jme3.bullet.control.CharacterControl;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
@@ -23,16 +24,14 @@ public class Character extends GameObject{
     leftRotate = false, rightRotate = false;
     Spatial model;
     CharacterControl characterControl;
-    
     boolean isInVehicle = false;
     
     public Character(Spatial model, String name, Vector3f camPosition){
         super(name, camPosition);
         this.model = model;
-        
         characterControl = new CharacterControl(new CapsuleCollisionShape(0.5f, 1.8f), .1f);
         characterControl.setApplyPhysicsLocal(true);
- 
+        
         
         
     }
@@ -70,6 +69,7 @@ public class Character extends GameObject{
             } else if (binding.equals("Space")) {
                 characterControl.jump();
             }
+          
         
     }
     

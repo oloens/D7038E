@@ -13,14 +13,22 @@ import com.jme3.scene.Node;
  * @author Anton
  */
 public abstract class GameObject extends Node {
-    
+    public GameObject() {
+        
+    }
     public Vector3f camPosition;
-    
+    private int id;
     public GameObject(String name, Vector3f camPosition){
         super(name);
         this.camPosition = camPosition;
+        
     }
-    
+    public void setID(int id) {
+        this.id=id;
+    }
+    public int getID() {
+        return this.id;
+    }
     public abstract void control(String binding, boolean value, float tpf);
     
     

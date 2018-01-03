@@ -10,6 +10,8 @@ import com.jme3.math.Vector3f;
 import com.jme3.network.AbstractMessage;
 import com.jme3.network.serializing.Serializable;
 import com.jme3.network.serializing.Serializer;
+import java.util.ArrayList;
+
 
 /**
  * Based on example by Håkan Jonsson
@@ -20,7 +22,7 @@ import com.jme3.network.serializing.Serializer;
  */
 public class Util {
     public static final int PORT = 7003;
-    public static final String HOSTNAME = "localhost";
+    public static final String HOSTNAME = "127.0.0.1";
     // register all message types there are
     public static void initialiseSerializables() {
         Serializer.registerClass(StartGameMessage.class);
@@ -53,10 +55,9 @@ public class Util {
     @Serializable
     public static class StartGameMessage extends MyAbstractMessage {
         
+        
         public StartGameMessage() {
-  
-            
-            
+;       
         }
 
     }
@@ -70,7 +71,17 @@ public class Util {
     
     @Serializable
     public static class ChangeVelocityMessage extends MyAbstractMessage {
-
+        int id;
+        String name;
+        boolean isPressed;
+        float tpf;
+        public ChangeVelocityMessage(int id, String name, boolean isPressed, float tpf) {
+            this.id=id;
+            this.name=name;
+            this.isPressed=isPressed;
+            this.tpf=tpf;
+        }
+        
         public ChangeVelocityMessage() {
             
         }
@@ -79,11 +90,22 @@ public class Util {
 }
     @Serializable
     public static class UpdateMessage extends MyAbstractMessage {
+        int[] ids;
+        Vector3f[] viewDirections;
+        Vector3f[] walkDirections;
+        Vector3f[] positions;
         
+        
+        public UpdateMessage(int[] ids, Vector3f[] viewDirections, Vector3f[] walkDirections,
+                Vector3f[] positions) {
+            this.ids=ids;
+            this.viewDirections=viewDirections;
+            this.walkDirections=walkDirections;
+            this.positions=positions;
+        }
+
         public UpdateMessage() {
             
         }
-
-
     }
 }
