@@ -9,6 +9,7 @@ import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.bullet.control.BetterCharacterControl;
 import com.jme3.bullet.control.CharacterControl;
 import com.jme3.math.Vector3f;
+import com.jme3.scene.CameraNode;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 
@@ -26,15 +27,17 @@ public class Character extends GameObject{
     CharacterControl characterControl;
     boolean isInVehicle = false;
     
-    public Character(Spatial model, String name, Vector3f camPosition){
+    public Character(Spatial model, String name, Vector3f camPosition, boolean useCC){
         super(name, camPosition);
         this.model = model;
-        characterControl = new CharacterControl(new CapsuleCollisionShape(0.5f, 1.8f), .1f);
-        characterControl.setApplyPhysicsLocal(true);
-        
+        if (useCC) {
+            characterControl = new CharacterControl(new CapsuleCollisionShape(0.5f, 1.8f), .1f);
+            characterControl.setApplyPhysicsLocal(true);          
+        }        
         
         
     }
+
     
     // Taget från JmeTest
     public void control(String binding, boolean value, float tpf){
@@ -79,17 +82,14 @@ public class Character extends GameObject{
         leftRotate = false;
         rightRotate = false;
         this.walkDirection.set(0, 0, 0);
-        this.characterControl.setWalkDirection(this.walkDirection);
+        if (this.characterControl!=null) {
+            this.characterControl.setWalkDirection(this.walkDirection);
+        
+        }
     }
     
     
-    public void invisible(){
-        this.setCullHint(CullHint.Always);
-    }
-    
-    public void visible(){
-        this.setCullHint(CullHint.Never);
-    }
+
     
     
     

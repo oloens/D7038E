@@ -11,16 +11,18 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.math.Quaternion;
-import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
 import com.jme3.network.HostedConnection;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
 import com.jme3.network.Network;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import mygame.Util.ChangeVelocityMessage;
+import mygame.Util.DisconnectMessage;
+import mygame.Util.InOutVehicleMessage;
 import mygame.Util.MyAbstractMessage;
 import mygame.Util.StartGameMessage;
 import mygame.Util.StopGameMessage;
@@ -42,19 +44,24 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
 
     private MessageQueue messageQueue = new MessageQueue();
     private boolean running = false;
+    private boolean fullyInitialized = false;
+    private GameObject currentObject;
+    private int myId;
+    
     Game game;
     
     public static void main(String[] args) {
         Util.initialiseSerializables();
         MyClient app = new MyClient(Util.HOSTNAME, Util.PORT);
         app.start();
+
     }
 
     public MyClient(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
         //running=false;
-        this.game = new Game();
+        this.game = new Game(true);
         stateManager.attach(game);
     }
     private void initKeys() {
@@ -105,7 +112,9 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
                             StartGameMessage.class,
                             StopGameMessage.class,
                             ChangeVelocityMessage.class,
-                            UpdateMessage.class);
+                            UpdateMessage.class,
+                            InOutVehicleMessage.class,
+                            DisconnectMessage.class);
 
  
             
@@ -116,6 +125,7 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
             serverConnection.start();
             new Thread(new NetWrite()).start();
             
+            messageQueue.enqueue(new StartGameMessage());
             System.out.println("Client communication back to server started");
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -134,11 +144,31 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
         //System.out.println("x = " + game.characters.get(0).characterControl.getViewDirection().x);
         //System.out.println(" y = " + game.characters.get(0).characterControl.getViewDirection().y);
         //System.out.println("z = " + game.characters.get(0).characterControl.getViewDirection().z);
-        game.characters.get(0).rotate(new Quaternion(2f, 0f, 0f, 0f));
+        //game.characters.get(0).setLocalTranslation(-50f, 10f, 50f);
     }
     @Override
     public void onAction(String name, boolean isPressed, float tpf) {
-        int id = game.characters.get(0).getID();
+        if (!fullyInitialized) {
+            return;
+        }
+        int id = currentObject.getID();
+        if (currentObject instanceof Car && name.equals("EnterExit")) {
+            id = myId;
+        }
+        
+        if( currentObject instanceof Car){
+            if( name.equals("Ups")){
+                if(isPressed){
+                    game.playDriveOffAudio();
+                    game.playDrivingAudio();
+                }else{
+                    game.stopDriveOffAudio();
+                    game.stopDrivingAudio();
+                }
+                
+            }
+            
+        }
         messageQueue.enqueue(new ChangeVelocityMessage(id, name, isPressed, tpf));
         
         //game.onAction(name, isPressed, tpf);
@@ -148,7 +178,11 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
     public void onAnalog(String name, float value, float tpf) {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
+    private void setup(int id) {
+        this.myId=id;
+        this.currentObject = game.getCharacterById(id);
+        System.out.println("here");
+    }
 
     // This class is a packet handler
     private class ClientNetworkMessageListener
@@ -161,6 +195,17 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
                  Future result = MyClient.this.enqueue(new Callable() {
                     @Override
                     public Object call() throws Exception {
+                        game.clientMakeCharacter(((StartGameMessage) m).id);
+                        setup(((StartGameMessage) m).id);
+                        for (int i=0; i<game.cars.size(); i++) {
+                            game.getPhysicsSpace().remove(game.cars.get(i).carControl);
+
+                        }
+                        game.playBackgroundMusic();
+                        
+                        System.out.println(game.getPhysicsSpace().getVehicleList());
+  
+                        fullyInitialized=true;
                         return true;
                     }
                 });
@@ -175,50 +220,91 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
                     }
                 });                
                            
-            }else if (m instanceof UpdateMessage) {
+            }else if (m instanceof InOutVehicleMessage) {
                  Future result = MyClient.this.enqueue(new Callable() {
                     @Override
                     public Object call() throws Exception {
+                        System.out.println("here1");
+                        Character c1 = game.getCharacterById(myId);
+                        int id = ((InOutVehicleMessage) m).id;
+                        for (int i=0; i<game.entities.size(); i++) {
+                            if (id==game.entities.get(i).getID()) {
+                                System.out.println("here2");
+
+                                game.changeControlClient(c1, game.entities.get(i));
+                                currentObject = game.entities.get(i);
+                            }
+                        }
+                        
+                     return true;
+                    }
+                });                
+                           
+            }else if (m instanceof UpdateMessage) {
+                Future result = MyClient.this.enqueue(new Callable() {
+                    @Override
+                    public Object call() throws Exception {
+                        if (!fullyInitialized) {
+                           return true;
+
+                        }
+                        ArrayList<Integer> notFoundIds = new ArrayList<Integer>();
                         boolean found;
                         for (int i=0; i<((UpdateMessage) m).ids.length; i++) {
                             found=false;
-                            int id = ((UpdateMessage) m).ids[i];
-                            
-                            for (int j=0; j<game.characters.size(); j++) {
-                                if (id==game.characters.get(i).getID()) {
+                            for (int j=0; j<game.entities.size(); j++) {
+                                if (game.entities.get(j).getID()==((UpdateMessage) m).ids[i]) {
                                     found=true;
-                                    Character c1 = game.characters.get(i);
-                                   // c1.characterControl.
-                                    c1.characterControl.warp(((UpdateMessage) m).positions[i]);
-                                    //c1.characterControl.setViewDirection(((UpdateMessage) m).viewDirections[i]);
-                                    Quaternion t1 = c1.getLocalRotation();
-                                    //t1.lookAt(((UpdateMessage) m).viewDirections[i], Vector3f.UNIT_Y);
-                                    //c1.setLocalRotation(t1);
-                                    //c1.characterControl.update(0.01f);
-                                    System.out.println("here");
-                                    //c1.characterControl.setWalkDirection(((UpdateMessage) m).walkDirections[i]);
-                                   // Vector3f viewDir = ((UpdateMessage) m).viewDirections[i];
-                                    
-                                    //cam.setRotation(new Quaternion(viewDir.x, viewDir.y, viewDir.z, 0.0f));
-
                                 }
                             }
                             if (!found) {
-                                Character newchar = game.spawnEntity("Character");
-                                newchar.setID(id);
-                                newchar.characterControl.warp(((UpdateMessage) m).positions[i]);
-                                newchar.characterControl.setViewDirection(((UpdateMessage) m).viewDirections[i]);
-                                //game.characters.get(0).characterControl.setUseViewDirection(true);
-                               // game.characters.get(0).characterControl.update(0.001f);
+                                notFoundIds.add(((UpdateMessage) m).ids[i]);
+                                
                             }
+                        }
+                        for (int i=0; i<notFoundIds.size(); i++) {
+                            Character newchar = game.spawnEntity(notFoundIds.get(i));
+                        }
+                        for (int i=0; i<((UpdateMessage) m).ids.length; i++) {
+                                    GameObject c1 = game.getEntityById(((UpdateMessage) m).ids[i]);
+                                    c1.setLocalTranslation(((UpdateMessage) m).positions[i]);
+                                    float a = ((UpdateMessage) m).a[i];
+                                    float b = ((UpdateMessage) m).b[i];
+                                    float c = ((UpdateMessage) m).c[i];
+                                    float d = ((UpdateMessage) m).d[i];
+                                    c1.setLocalRotation(new Quaternion(a,b,c,d));
+                                    
+                                    if (((UpdateMessage) m).visible[i]) {
+                                        c1.visible();
+                                    }
+                                    else {
+                                        c1.invisible();
+                                    }
                         }
                         
                         return true;
                     }
-                });      
+                });
+
                 
-                
-            } else {
+            }
+            else if (m instanceof DisconnectMessage) {
+                Future result = MyClient.this.enqueue(new Callable() {
+                    @Override
+                    public Object call() throws Exception {
+                        if (((DisconnectMessage) m).id==myId) {
+                            System.out.println("Disconnecting...");
+                            serverConnection.close();
+                        }
+                        game.getCharacterById(((DisconnectMessage) m).id).getParent().detachChild(game.getCharacterById(((DisconnectMessage) m).id));
+                        game.entities.remove((game.getEntityById(((DisconnectMessage) m).id)));
+                        game.characters.remove((game.getCharacterById(((DisconnectMessage) m).id)));
+                        
+                     return true;
+                    }
+                }); 
+            }
+            else {
                 // must be a programming error(!)
                 throw new RuntimeException("Unknown message.");
             }
@@ -228,7 +314,8 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
     // takes down all communication channels gracefully, when called
     @Override
     public void destroy() {
-        serverConnection.close();
+        serverConnection.send(new DisconnectMessage(myId));
+        //serverConnection.close();
         super.destroy();
     }
     private class NetWrite implements Runnable {

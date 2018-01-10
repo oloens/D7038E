@@ -34,6 +34,9 @@ package mygame;
 import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.BaseAppState;
+import com.jme3.audio.AudioData;
+import com.jme3.audio.AudioData.DataType;
+import com.jme3.audio.AudioNode;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.PhysicsSpace;
@@ -95,7 +98,7 @@ public class Main extends SimpleApplication implements AnalogListener,
         app.start();
     }
     public Main() {
-        game = new Game();
+        game = new Game(false);
         stateManager.attach(game);
     }
     
@@ -152,6 +155,8 @@ public class Main extends SimpleApplication implements AnalogListener,
 class Game extends BaseAppState {
     protected BulletAppState bulletAppState;
     private SimpleApplication sapp;
+    protected boolean isClient;
+    private int objectCounter = 0;
 
     TerrainQuad terrain;
     Material matRock;
@@ -165,6 +170,7 @@ class Game extends BaseAppState {
     protected ArrayList<Car> cars = new ArrayList<Car>();        // Alla bilar, ( Kanske ska ändras till alla objekt(?))
     private Car carObject;
     private Car collidedCar;
+    protected ArrayList<GameObject> entities = new ArrayList<GameObject>();
     
     private Character characterObject;                      // Avataren man är 
     private CameraNode camNode;
@@ -175,8 +181,15 @@ class Game extends BaseAppState {
     
     float airTime = 0;
     
+    AudioNode backgroundMusicNode;
+    AudioNode DriveOffAudioNode;
+    AudioNode DrivingAudioNode;
+    
     GhostControl ghostControl;                            // Används för att upptäcka kollisioner
-
+    public Game(boolean isClient) {
+        this.isClient=isClient;
+    }
+    
     public void onDisable() {
         
     }
@@ -201,11 +214,27 @@ class Game extends BaseAppState {
         
         //setupKeys();
         createTerrain();
-        buildCar(new Vector3f(-20,0,-20));
-        buildCar(new Vector3f(-30,0,-30));
-        //buildHouse();
-        createCharacter();
+        buildCar(new Vector3f(-120,0,-20));
+        buildCar(new Vector3f(-130,0,-30));
+        initDriveSound();
         
+        
+        //buildHouse();
+        //createCharacter();
+        
+//        backgroundMusicNode = new AudioNode(sapp.getAssetManager(), "Sounds/Fantascape_Looping.ogg", AudioData.DataType.Buffer);
+//        backgroundMusicNode.setLooping(true);
+//        backgroundMusicNode.setPitch(0.5f);
+//        backgroundMusicNode.setRefDistance(1);
+//        backgroundMusicNode.setMaxDistance(100000000);
+//        backgroundMusicNode.setVelocityFromTranslation(true);
+//        backgroundMusicNode.play();
+        
+          //playBackgroundMusic();
+      
+        
+        
+      
 
         DirectionalLight dl = new DirectionalLight();
         dl.setColor(new ColorRGBA(1.0f, 0.94f, 0.8f, 1f).multLocal(1.3f));
@@ -220,6 +249,55 @@ class Game extends BaseAppState {
     
 
     }
+    
+    public void initDriveSound(){
+        
+        DriveOffAudioNode = new AudioNode(sapp.getAssetManager(), "Sounds/passat_driveoff.ogg", AudioData.DataType.Buffer);
+        DriveOffAudioNode.setLooping(false);  // activate continuous playing
+        DriveOffAudioNode.setPositional(false);
+        DriveOffAudioNode.setVolume(1);
+        sapp.getRootNode().attachChild(DriveOffAudioNode); 
+        
+        DrivingAudioNode = new AudioNode(sapp.getAssetManager(), "Sounds/passat_driving.ogg", AudioData.DataType.Buffer);
+        DrivingAudioNode.setLooping(true);  // activate continuous playing
+        DrivingAudioNode.setPositional(false);
+        DrivingAudioNode.setVolume(1);
+        sapp.getRootNode().attachChild(DrivingAudioNode); 
+    }
+    
+    public void playBackgroundMusic(){
+        backgroundMusicNode = new AudioNode(sapp.getAssetManager(), "Sounds/summer.ogg", DataType.Buffer);
+        backgroundMusicNode.setLooping(true);  // activate continuous playing
+        backgroundMusicNode.setPositional(false);
+        backgroundMusicNode.setVolume(0.5f);
+        sapp.getRootNode().attachChild(backgroundMusicNode); 
+        backgroundMusicNode.play(); // play continuously!
+    }
+    
+    public void playDriveOffAudio(){
+      
+        DriveOffAudioNode.play(); // play continuously!
+    }
+    
+    public void playDrivingAudio(){
+      
+        DrivingAudioNode.play(); // play continuously!
+    }
+    
+    public void stopDriveOffAudio(){
+        if(DriveOffAudioNode != null){
+            System.out.println("Stop drive sound");
+            DriveOffAudioNode.stop();
+        }
+    }
+    
+    public void stopDrivingAudio(){
+        if(DrivingAudioNode != null){
+            System.out.println("Stop drive sound");
+            DrivingAudioNode.stop();
+        }
+    }
+    
     private void createTerrain() {
         Spatial terrain = sapp.getAssetManager().loadModel("Scenes/MyScene.j3o");
         RigidBodyControl rigidBodyControl = new RigidBodyControl(0);
@@ -236,7 +314,7 @@ class Game extends BaseAppState {
     public void initialize(Application app) {
         sapp = (SimpleApplication) app;
     }
-    private PhysicsSpace getPhysicsSpace() {
+    protected PhysicsSpace getPhysicsSpace() {
         return bulletAppState.getPhysicsSpace();
     }
     
@@ -270,19 +348,71 @@ class Game extends BaseAppState {
         house.setMaterial(houseWall);
         
     }
-    
-    private void createCharacter() {
-
+    protected int serverMakeCharacter() {
+        objectCounter++;
           Spatial model = sapp.getAssetManager().loadModel("Models/Sinbad/Sinbad.mesh.xml");   
           model.scale(0.25f);
      
-          characterObject = new Character(model, "character node", new Vector3f(0, 1, -5));
+          characterObject = new Character(model, "character node", new Vector3f(0, 1, -5), !isClient);
           characters.add(characterObject);
-          characterObject.addControl(characterObject.characterControl);
+          characterObject.setID(objectCounter);
+          entities.add(characterObject);
+          if (!isClient) {
+              characterObject.addControl(characterObject.characterControl);
+              getPhysicsSpace().add(characterObject.characterControl);
+              characterObject.characterControl.setPhysicsLocation(new Vector3f(-115,5,0));
+          }
+          else {
+              characterObject.setLocalTranslation(new Vector3f(-115,5,0));
+          }
+          GhostControl ctrl = new GhostControl(new SphereCollisionShape(0.7f));
+          getPhysicsSpace().add(ctrl);
+          characterObject.addControl(ctrl);
+          characterObject.ghostControl = ctrl;
+      
+          sapp.getRootNode().attachChild(characterObject);
+          characterObject.attachChild(model);
+          
+          // set forward camera node that follows the character
+          Camera cam = sapp.getCamera().clone();
+          characterObject.camNode = new CameraNode("CamNode", cam);
+          characterObject.camNode.setControlDir(ControlDirection.SpatialToCamera);
+          characterObject.camNode.setLocalTranslation(characterObject.camPosition);
+          characterObject.camNode.lookAt(model.getLocalTranslation(), Vector3f.UNIT_Y);
+          characterObject.attachChild(characterObject.camNode);
+          
+
+          //disable the default 1st-person flyCam (don't forget this!!)
+          sapp.getFlyByCamera().setEnabled(false);
+
+          characterObject.currentObject = characterObject;
+          if (!isClient) {
+             currentControl = characterObject.characterControl; 
+          }
+          
+          
+          return characterObject.getID();
+    }
+    
+    protected void clientMakeCharacter(int id) {
+        Spatial model = sapp.getAssetManager().loadModel("Models/Sinbad/Sinbad.mesh.xml");   
+          model.scale(0.25f);
+     
+          characterObject = new Character(model, "character node", new Vector3f(0, 1, -5), !isClient);
+          characters.add(characterObject);
+          characterObject.setID(id);
+          entities.add(characterObject);
+          if (!isClient) {
+              characterObject.addControl(characterObject.characterControl);
+              getPhysicsSpace().add(characterObject.characterControl);
+              characterObject.characterControl.setPhysicsLocation(new Vector3f(-5,5,0));
+          }
+          else {
+              characterObject.setLocalTranslation(new Vector3f(-5,5,0));
+          }
           characterObject.addControl(ghostControl);
          
-          getPhysicsSpace().add(characterObject.characterControl);
-          characterObject.characterControl.setPhysicsLocation(new Vector3f(-5,5,0));
+
           
           sapp.getRootNode().attachChild(characterObject);
           characterObject.attachChild(model);
@@ -293,69 +423,151 @@ class Game extends BaseAppState {
           camNode.setLocalTranslation(characterObject.camPosition);
           camNode.lookAt(model.getLocalTranslation(), Vector3f.UNIT_Y);
           characterObject.attachChild(camNode);
+          
 
           //disable the default 1st-person flyCam (don't forget this!!)
           sapp.getFlyByCamera().setEnabled(false);
 
+          characterObject.currentObject = characterObject;
           currentObject = characterObject;
-          currentControl = characterObject.characterControl;
+          if (!isClient) {
+             currentControl = characterObject.characterControl; 
+          }
           
+    
     }
-    public Character spawnEntity(String type) {
-        if (type.equals("Car")) {
-            //TODO
-        }
-        else {
-          
+    
+    
+    protected void createCharacter() {
+          objectCounter++;
           Spatial model = sapp.getAssetManager().loadModel("Models/Sinbad/Sinbad.mesh.xml");   
           model.scale(0.25f);
      
-          characterObject = new Character(model, "character node", new Vector3f(0, 1, -5));
+          characterObject = new Character(model, "character node", new Vector3f(0, 1, -5), !isClient);
           characters.add(characterObject);
-          characterObject.addControl(characterObject.characterControl);
+          characterObject.setID(objectCounter);
+          entities.add(characterObject);
+          if (!isClient) {
+              characterObject.addControl(characterObject.characterControl);
+              getPhysicsSpace().add(characterObject.characterControl);
+              characterObject.characterControl.setPhysicsLocation(new Vector3f(-115,5,0));
+          }
+          else {
+              characterObject.setLocalTranslation(new Vector3f(-115,5,0));
+          }
           characterObject.addControl(ghostControl);
          
-          getPhysicsSpace().add(characterObject.characterControl);
-          characterObject.characterControl.setPhysicsLocation(new Vector3f(-5,5,0));
+
           
           sapp.getRootNode().attachChild(characterObject);
           characterObject.attachChild(model);
           
-          return characterObject;
+          // set forward camera node that follows the character
+          camNode = new CameraNode("CamNode", sapp.getCamera());
+          camNode.setControlDir(ControlDirection.SpatialToCamera);
+          camNode.setLocalTranslation(characterObject.camPosition);
+          camNode.lookAt(model.getLocalTranslation(), Vector3f.UNIT_Y);
+          characterObject.attachChild(camNode);
+          
 
-        }
-        return null;
+          //disable the default 1st-person flyCam (don't forget this!!)
+          sapp.getFlyByCamera().setEnabled(false);
+
+          characterObject.currentObject = characterObject;
+          if (!isClient) {
+             currentControl = characterObject.characterControl; 
+          }
+          
+    }
+    public Character spawnEntity(int id) {       
+        Spatial model = sapp.getAssetManager().loadModel("Models/Sinbad/Sinbad.mesh.xml");   
+        model.scale(0.25f);
+
+        Character characterObject = new Character(model, "character node", new Vector3f(0, 1, -5), !isClient);
+        characters.add(characterObject);
+        entities.add(characterObject);
+        characterObject.setID(id);
+        sapp.getRootNode().attachChild(characterObject);
+        characterObject.attachChild(model);
+
+        return characterObject;
+
     }
     
     private void buildCar(Vector3f initialPosition) {
+        objectCounter++;
 
         //Load model and get chassis Geometry
         Spatial carNode = sapp.getAssetManager().loadModel("Models/Ferrari/Car.scene");
        
         carNode.setShadowMode(ShadowMode.Cast);  
-        carObject = new Car("Car", carNode, new Vector3f(0, 4, 12));
-        
+        carObject = new Car("Car", carNode, new Vector3f(0, 4, 12), sapp.getAssetManager());
+        carObject.setID(objectCounter);
         carObject.setLocalTranslation(initialPosition);
+        getPhysicsSpace().add(carObject.carControl);  
         carObject.addControl(carObject.carControl);
-        
-        getPhysicsSpace().add(carObject.carControl);
+
         
         carObject.attachChild(carNode);
         sapp.getRootNode().attachChild(carObject);
         
         cars.add(carObject);       
+        entities.add(carObject);
 
         //disable the default 1st-person flyCam (don't forget this!!)
         sapp.getFlyByCamera().setEnabled(false);
           
     }
+    protected Character getCharacterById(int id) {
+        for (int i=0; i<characters.size(); i++) {
+            if (id==characters.get(i).getID()) {
+                return characters.get(i);
+            }
+        }
+        System.out.println("Character not found in getCharacterById()");
+        return null;
+    }
+    protected GameObject getEntityById(int id) {
+        for (int i=0; i<entities.size(); i++) {
+            if (id==entities.get(i).getID()) {
+                return entities.get(i);
+            }
+        }
+        System.out.println("Entity not found in getEntityById())");
+        return null;
+    }
 
-    // Byter nuvarande objektet som kameran riktas på 
-    private void changeControl(GameObject newObjectToControl){
+    protected void changeControlClient(Character c1, GameObject newObjectToControl) {
+      
+        if (newObjectToControl instanceof Car) {
+            //System.out.println(collidedCar.toString()+ " collidedCaronAction");                  
+            //characterObject.characterControl.setPhysicsLocation(new Vector3f(0,1,-10));
+            c1.removeFromParent();                 
+            newObjectToControl.attachChild(c1);
+            //System.out.println(characterObject.getParent().toString() + " PARENT OF CHARACTER");     
+            c1.isInVehicle = true;           
+            c1.invisible();
+
+            
+        }
+        else {
+            System.out.println(c1.getLocalTranslation() + " characterlocal");
+            Node characterParent = c1.getParent();
+            Vector3f parentsLocalTranslation = characterParent.getLocalTranslation();
+            characterObject.removeFromParent();
+            c1.setLocalTranslation(parentsLocalTranslation.add(-2,1,0));
+            sapp.getRootNode().attachChild(c1);
+
+            c1.visible();     
+            //changeControl(((GameObject) c1.getParent()), c1);
+            c1.isInVehicle = false;            
+        }
+        //changeControl(c1, newObjectToControl);  
+        
         currentObject.stopMovement();
         currentObject.detachChild(camNode);
         
-        this.currentObject = newObjectToControl;
+        currentObject = newObjectToControl;
         
         sapp.getFlyByCamera().setEnabled(false);
              
@@ -368,10 +580,92 @@ class Game extends BaseAppState {
         camNode.lookAt(currentObject.getLocalTranslation(), Vector3f.UNIT_Y);
 
     }
+
+    // Byter nuvarande objektet som kameran riktas på 
+    private GameObject changeControl(Character c1, GameObject newObjectToControl){
+        c1.currentObject = newObjectToControl;
+        newObjectToControl.camNode = c1.camNode;
+        
+        return c1.currentObject;
+
+    }
+    public void serverUpdate(float tpf) {
+        for (int j=0; j<characters.size(); j++) {
+            GameObject currentObject = characters.get(j).currentObject;
+            if (currentObject.ghostControl!=null){
+                List<PhysicsCollisionObject> overLappingObjects = currentObject.ghostControl.getOverlappingObjects();
+        
+                boolean collide = false;
+                for(int i=0; i<cars.size(); i++){
+                    if(currentObject.ghostControl.getOverlappingObjects().contains(cars.get(i).getControl(PhysicsControl.class))){
+                        currentObject.collidedCar = cars.get(i);
+                        collide = true;
+
+                    }
+                }
+                if(collide == false){
+                    currentObject.collidedCar = null;
+                    sapp.getGuiNode().detachAllChildren();
+                }
+            }
+
+
+
+            currentObject.camNode.lookAt(currentObject.getWorldTranslation(), Vector3f.UNIT_Y);
+            // Taget från JmeTests
+            if(currentObject instanceof Character){
+                //System.out.println("Character current");
+                Character character = (Character)currentObject;
+                Vector3f camDir = character.camNode.getCamera().getDirection().mult(0.8f);
+                Vector3f camLeft = character.camNode.getCamera().getLeft().mult(0.8f);
+                camDir.y = 0;
+                camLeft.y = 0;
+
+                character.viewDirection.set(camDir);
+                character.walkDirection.set(0, 0, 0);
+
+                if (character.leftRotate) {
+                //System.out.println("leftRotate su");
+                character.viewDirection.addLocal(camLeft.mult(0.05f));
+                } else
+                if (character.rightRotate) {
+                    //System.out.println("rightRotate su");
+                    character.viewDirection.addLocal(camLeft.mult(0.05f).negate());
+                }
+                if (character.forward) {
+                    //System.out.println("forward su");
+                    character.walkDirection.addLocal(camDir.mult(0.5f));
+                } else
+                if (character.backward) {
+                    //System.out.println("backward su");
+                    character.walkDirection.addLocal(camDir.mult(0.5f).negate());
+                 }
+                if (!isClient) {
+                    character.characterControl.setWalkDirection(character.walkDirection);
+                    character.characterControl.setViewDirection(character.viewDirection);  
+                    //System.out.println(character.getLocalRotation());
+                }
+
+            }
+            else{
+
+            }
+            }
+    }
+    
+    
     @Override
     public void update(float tpf) {
+        if (!isClient) {
+            serverUpdate(tpf);
+            return;
+        }
+        
         List<PhysicsCollisionObject> overLappingObjects = ghostControl.getOverlappingObjects();
-  
+        if (characters.isEmpty()) {
+            //only do automatic stuff
+            return;
+        }
         
         boolean collide = false;
         for(int i=0; i<cars.size(); i++){
@@ -395,7 +689,7 @@ class Game extends BaseAppState {
         }
      
         
-        sapp.getCamera().lookAt(currentObject.getWorldTranslation(), Vector3f.UNIT_Y);
+//        sapp.getCamera().lookAt(currentObject.getWorldTranslation(), Vector3f.UNIT_Y);
         // Taget från JmeTests
         if(currentObject instanceof Character){
             //System.out.println("Character current");
@@ -409,23 +703,27 @@ class Game extends BaseAppState {
             character.walkDirection.set(0, 0, 0);
            
             if (character.leftRotate) {
-                System.out.println("leftRotate su");
+                //System.out.println("leftRotate su");
                 character.viewDirection.addLocal(camLeft.mult(0.05f));
             } else
             if (character.rightRotate) {
-                System.out.println("rightRotate su");
+                //System.out.println("rightRotate su");
                 character.viewDirection.addLocal(camLeft.mult(0.05f).negate());
             }
             if (character.forward) {
-                System.out.println("forward su");
+                //System.out.println("forward su");
                 character.walkDirection.addLocal(camDir.mult(0.5f));
             } else
             if (character.backward) {
-                System.out.println("backward su");
+                //System.out.println("backward su");
                 character.walkDirection.addLocal(camDir.mult(0.5f).negate());
             }
-            character.characterControl.setWalkDirection(character.walkDirection);
-            character.characterControl.setViewDirection(character.viewDirection);
+            if (!isClient) {
+                character.characterControl.setWalkDirection(character.walkDirection);
+                character.characterControl.setViewDirection(character.viewDirection);  
+                //System.out.println(character.getLocalRotation());
+            }
+ 
         }
         else{
 
@@ -435,7 +733,7 @@ class Game extends BaseAppState {
     }
         public void onAction(String binding, boolean value, float tpf) {
             
-        if (binding.equals("EnterExit")){
+        /*if (binding.equals("EnterExit")){
             if (value) {
                 if(!characterObject.isInVehicle){                  
                     if(collidedCar!= null){
@@ -478,7 +776,60 @@ class Game extends BaseAppState {
             System.out.println(binding.toString() +" : " + value);
             currentObject.control(binding, value, tpf);
         }
-        
+        */
     }
-
+    public void characterAction(String binding, boolean value, float tpf, Character character) {
+                    
+        if (binding.equals("EnterExit")){
+            if (value) {
+                if(!character.isInVehicle){                  
+                    if(character.collidedCar!= null){
+                        if (character.collidedCar.occupied) {
+                            return;
+                        }
+                        character.stopMovement();
+                        
+                        
+                        character.collidedCar.occupied = true;
+                       //System.out.println(collidedCar.toString()+ " collidedCaronAction");                  
+                       character.characterControl.setPhysicsLocation(new Vector3f(0,1,-10));
+                       character.removeFromParent();                 
+                       character.collidedCar.attachChild(character);
+                       //System.out.println(characterObject.getParent().toString() + " PARENT OF CHARACTER");     
+                       character.isInVehicle = true;           
+                       character.invisible();
+                       changeControl(character, character.collidedCar);
+                    }
+                }
+                else{
+                    //System.out.println(currentObject.getLocalTranslation()+ " carlocal");
+                    //System.out.println(characterObject.getLocalTranslation() + " characterlocal");
+                    ((Car) character.getParent()).occupied=false;
+                    System.out.println(character.getLocalTranslation() + " characterlocal");
+                    Node characterParent = character.getParent();
+                    Vector3f parentsLocalTranslation = characterParent.getLocalTranslation();
+                    character.removeFromParent();
+                    character.characterControl.setPhysicsLocation(parentsLocalTranslation.add(-2,1,0));
+                    sapp.getRootNode().attachChild(character);
+              
+//              System.out.println("ContactPoint: " + " X: " + contactPoint.getX() + " Y: " + contactPoint.getY() + " Z: " + contactPoint.getZ());
+//              System.out.println("localPoint: " + " X: " + localPoint.getX() + " Y: " + localPoint.getY() + " Z: " + localPoint.getZ()); 
+                     
+                    character.visible();     
+                    changeControl(character, character);
+                    character.isInVehicle = false;
+                }           
+                
+            } else {
+              
+            }
+        }
+        else{
+            System.out.println("Not exitEnter");
+            System.out.println(currentObject.toString());
+            System.out.println(binding.toString() +" : " + value);
+            character.control(binding, value, tpf);
+        }
+    }
 }
+

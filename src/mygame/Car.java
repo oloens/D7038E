@@ -5,6 +5,9 @@
  */
 package mygame;
 
+import com.jme3.asset.AssetManager;
+import com.jme3.audio.AudioData;
+import com.jme3.audio.AudioNode;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.control.VehicleControl;
@@ -30,6 +33,8 @@ public class Car extends GameObject{
     }
     VehicleControl carControl;
     
+    boolean occupied = false;
+    
     private float wheelRadius;
     private float steeringValue = 0;
     private float accelerationValue = 0;
@@ -38,16 +43,20 @@ public class Car extends GameObject{
     float compValue = 0.2f; //(lower than damp!)
     float dampValue = 0.3f;
     final float mass = 400;
+    AssetManager assetManager;
     
-    public Car(String name, Spatial carNode, Vector3f camPosition){
+    AudioNode DriveAudioNode;
+    
+    public Car(String name, Spatial carNode, Vector3f camPosition, AssetManager assetManager){
         super(name, camPosition);
-        
+        this.assetManager = assetManager;
         createCar(carNode);
     }
     
     
     // Taget från JmeTests
     private void createCar(Spatial carNode){
+        System.out.println("creating car...");
         carNode.setShadowMode(RenderQueue.ShadowMode.Cast);  
         Geometry chasis = findGeom(carNode, "Car"); 
         BoundingBox box = (BoundingBox) chasis.getModelBound();
@@ -146,6 +155,7 @@ public class Car extends GameObject{
             else if (binding.equals("Ups")) {
                  System.out.println(value + " value");
             if (value) {
+                
                
                 accelerationValue -= 800;
             } else {

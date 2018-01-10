@@ -5,6 +5,7 @@
  */
 package mygame;
 import com.jme3.app.SimpleApplication;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.network.AbstractMessage;
@@ -29,6 +30,8 @@ public class Util {
         Serializer.registerClass(StopGameMessage.class);
         Serializer.registerClass(ChangeVelocityMessage.class);
         Serializer.registerClass(UpdateMessage.class);
+        Serializer.registerClass(InOutVehicleMessage.class);
+        Serializer.registerClass(DisconnectMessage.class);
 
     }
 
@@ -54,10 +57,13 @@ public class Util {
 
     @Serializable
     public static class StartGameMessage extends MyAbstractMessage {
-        
+        int id;
         
         public StartGameMessage() {
 ;       
+        }
+        public StartGameMessage(int id) {
+            this.id=id;
         }
 
     }
@@ -91,21 +97,51 @@ public class Util {
     @Serializable
     public static class UpdateMessage extends MyAbstractMessage {
         int[] ids;
-        Vector3f[] viewDirections;
-        Vector3f[] walkDirections;
         Vector3f[] positions;
+        float[] a;
+        float[] b;
+        float[] c;
+        float[] d;
+        boolean[] visible;
         
         
-        public UpdateMessage(int[] ids, Vector3f[] viewDirections, Vector3f[] walkDirections,
-                Vector3f[] positions) {
+        
+        public UpdateMessage(int[] ids, Vector3f[] positions, 
+                float[] a, float[] b, float[] c, float[] d, boolean[] visible) {
             this.ids=ids;
-            this.viewDirections=viewDirections;
-            this.walkDirections=walkDirections;
+
             this.positions=positions;
+            this.visible = visible;
+            
+            this.a=a;
+            this.b=b;
+            this.c=c;
+            this.d=d;
+
         }
 
         public UpdateMessage() {
             
         }
+    }
+    @Serializable
+    public static class InOutVehicleMessage extends MyAbstractMessage {
+        public int id;
+        public InOutVehicleMessage() {
+        }
+        public InOutVehicleMessage(int id) {
+            this.id=id;
+        }
+
+    }
+    @Serializable
+    public static class DisconnectMessage extends MyAbstractMessage {
+        public int id;
+        public DisconnectMessage() {
+        }
+        public DisconnectMessage(int id) {
+            this.id=id;
+        }
+
     }
 }

@@ -1,0 +1,143 @@
+newmtl barbes
+Ka 1 1 1
+Ke 0 0 0
+Kd 1 1 1
+Ks 0.1 0.1 0.1
+Ns 300
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl boots
+Ka 0.160784 0.0705882 0.00392157
+Ke 0 0 0
+Kd 0.34 0.34 0.34
+Ks 0.1 0.1 0.1
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl boots_semelle
+Ka 0.0823529 0.0392157 0
+Ke 0 0 0
+Kd 0.295 0.295 0.295
+Ks 0.05 0.05 0.05
+Ns 200
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl Ceinturon
+Ka 0.160784 0.0705882 0.00392157
+Ke 0 0 0
+Kd 0.65 0.65 0.65
+Ks 0.1 0.1 0.1
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl ceinturon_boucle
+Ka 0.501961 0.501961 0.501961
+Ke 0 0 0
+Kd 0.5 0.5 0.5
+Ks 1 1 1
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl Default
+Ka 0.501961 0 0
+Ke 0 0 0
+Kd 0.8 0.8 0.8
+Ks 0 0 0
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl eyes
+Ka 1 1 1
+Ke 0 0 0
+Kd 1 1 1
+Ks 0.6 0.6 0.6
+Ns 349
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl eyes_little
+Ka 0 0 0
+Ke 0 0 0
+Kd 1 1 1
+Ks 0.4 0.4 0.4
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl main
+Ka 0.74902 0.568627 0.403922
+Ke 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl man
+Ka 0.74902 0.568627 0.403922
+Ke 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl ongles
+Ka 0 0 0
+Ke 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl pantalon
+Ka 0.501961 0 0
+Ke 0 0 0
+Kd 0.8 0.8 0.8
+Ks 0 0 0
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl White
+Ka 1 1 1
+Ke 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
