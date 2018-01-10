@@ -6,6 +6,7 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.audio.AudioNode;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
@@ -16,17 +17,20 @@ import com.jme3.network.HostedConnection;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
 import com.jme3.network.Network;
+import com.jme3.scene.Spatial;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import mygame.Util.ChangeVelocityMessage;
 import mygame.Util.DisconnectMessage;
+import mygame.Util.HonkMessage;
 import mygame.Util.InOutVehicleMessage;
 import mygame.Util.MyAbstractMessage;
 import mygame.Util.StartGameMessage;
 import mygame.Util.StopGameMessage;
 import mygame.Util.UpdateMessage;
+
 
 
 /**
@@ -72,6 +76,7 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
         inputManager.addMapping("Space", new KeyTrigger(KeyInput.KEY_SPACE));
         inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_RETURN));
         inputManager.addMapping("EnterExit", new KeyTrigger(KeyInput.KEY_F));
+        inputManager.addMapping("Horn", new KeyTrigger(KeyInput.KEY_H));
         inputManager.addListener(this, "Lefts");
         inputManager.addListener(this, "Rights");
         inputManager.addListener(this, "Ups");
@@ -79,6 +84,7 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
         inputManager.addListener(this, "Space");
         inputManager.addListener(this, "Reset");
         inputManager.addListener(this, "EnterExit");
+        inputManager.addListener(this, "Horn");
         
     }
     
@@ -114,7 +120,8 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
                             ChangeVelocityMessage.class,
                             UpdateMessage.class,
                             InOutVehicleMessage.class,
-                            DisconnectMessage.class);
+                            DisconnectMessage.class, 
+                            HonkMessage.class);
 
  
             
@@ -158,6 +165,8 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
         
         if( currentObject instanceof Car){
             if( name.equals("Ups")){
+                
+                
                 if(isPressed){
                     game.playDriveOffAudio();
                     game.playDrivingAudio();
@@ -169,6 +178,8 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
             }
             
         }
+        
+
         messageQueue.enqueue(new ChangeVelocityMessage(id, name, isPressed, tpf));
         
         //game.onAction(name, isPressed, tpf);
@@ -304,6 +315,32 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
                     }
                 }); 
             }
+            else if (m instanceof HonkMessage) {
+
+                Future result = MyClient.this.enqueue(new Callable() {
+
+                    @Override
+
+                    public Object call() throws Exception {
+
+                        GameObject car = game.getEntityById(((HonkMessage) m).id);
+
+                        Spatial audio = ((Car) car).getChild("Audio");
+
+                        ((AudioNode) audio).play();
+
+                        System.out.println("honk!");
+
+                        
+
+                     return true;
+
+                    }
+
+                }); 
+
+            }
+            
             else {
                 // must be a programming error(!)
                 throw new RuntimeException("Unknown message.");

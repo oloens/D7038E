@@ -22,10 +22,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import mygame.Util.ChangeVelocityMessage;
 import mygame.Util.DisconnectMessage;
+import mygame.Util.HonkMessage;
 import mygame.Util.InOutVehicleMessage;
 import mygame.Util.MyAbstractMessage;
 import mygame.Util.StartGameMessage;
 import mygame.Util.UpdateMessage;
+
 
 /**
  *
@@ -176,6 +178,13 @@ public class MyServer extends SimpleApplication {
                                     }
                                     
                                 }
+                                if (((ChangeVelocityMessage) m).name.equals("Space") && c1 instanceof Car && ((ChangeVelocityMessage) m).isPressed) {
+
+                                    System.out.println("HONK MESSAGE INC");
+
+                                    messageQueue.enqueue(new HonkMessage(((ChangeVelocityMessage) m).id));
+
+                                }
                             }
                         }
                         return true;
@@ -213,6 +222,7 @@ public class MyServer extends SimpleApplication {
                     }
                 });
             }
+            
            
         }
     }

@@ -32,6 +32,7 @@ public class Util {
         Serializer.registerClass(UpdateMessage.class);
         Serializer.registerClass(InOutVehicleMessage.class);
         Serializer.registerClass(DisconnectMessage.class);
+        Serializer.registerClass(HonkMessage.class);
 
     }
 
@@ -144,4 +145,25 @@ public class Util {
         }
 
     }
+    
+     @Serializable
+
+    public static class HonkMessage extends MyAbstractMessage {
+
+        public int id;
+
+        public HonkMessage() {
+
+        }
+
+        public HonkMessage(int id) {
+
+            this.id=id;
+
+        }
+
+
+
+    }
+    
 }
