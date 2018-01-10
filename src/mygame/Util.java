@@ -33,6 +33,7 @@ public class Util {
         Serializer.registerClass(InOutVehicleMessage.class);
         Serializer.registerClass(DisconnectMessage.class);
         Serializer.registerClass(HonkMessage.class);
+        Serializer.registerClass(TimeUpdateMessage.class);
     }
 
 
@@ -58,16 +59,39 @@ public class Util {
     @Serializable
     public static class StartGameMessage extends MyAbstractMessage {
         int id;
+        float a,b,c,d;
+        boolean dayOrNight;
         
         public StartGameMessage() {
 ;       
         }
-        public StartGameMessage(int id) {
+        public StartGameMessage(int id, float a, float b, float c, float d, boolean dayOrNight) {
             this.id=id;
+            this.a=a;
+            this.b=b;
+            this.c=c;
+            this.d=d;
+            this.dayOrNight=dayOrNight;
         }
 
     }
     @Serializable
+    public static class TimeUpdateMessage extends MyAbstractMessage {
+        float a,b,c,d;
+        boolean dayOrNight;
+        
+        public TimeUpdateMessage() {
+        }
+        public TimeUpdateMessage(float a, float b, float c, float d, boolean dayOrNight) {
+            this.a=a;
+            this.b=b;
+            this.c=c;
+            this.d=d;
+            this.dayOrNight=dayOrNight;
+            
+        }
+
+    }@Serializable
     public static class StopGameMessage extends MyAbstractMessage {
         
         public StopGameMessage() {

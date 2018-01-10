@@ -178,6 +178,10 @@ class Game extends BaseAppState {
     
     float airTime = 0;
     
+    DirectionalLight dl = new DirectionalLight();
+    Vector3f lightDir2 = new Vector3f(0.70518064f, 0.5902297f, -0.39287305f);
+    DirectionalLight dl2 = new DirectionalLight();
+    
     GhostControl ghostControl;                            // Används för att upptäcka kollisioner
     public Game(boolean isClient) {
         this.isClient=isClient;
@@ -213,19 +217,23 @@ class Game extends BaseAppState {
         //createCharacter();
         
 
-        DirectionalLight dl = new DirectionalLight();
-        dl.setColor(new ColorRGBA(1.0f, 0.94f, 0.8f, 1f).multLocal(1.3f));
-        dl.setDirection(new Vector3f(-0.5f, -0.3f, -0.3f).normalizeLocal());
-        sapp.getRootNode().addLight(dl);
-
-        Vector3f lightDir2 = new Vector3f(0.70518064f, 0.5902297f, -0.39287305f);
-        DirectionalLight dl2 = new DirectionalLight();
-        dl2.setColor(new ColorRGBA(0.7f, 0.85f, 1.0f, 1f));
-        dl2.setDirection(lightDir2);
-        sapp.getRootNode().addLight(dl2);
+        initLight();
     
 
     }
+    
+    private void initLight(){
+
+        dl.setColor(new ColorRGBA(1.0f, 0.9f, 0.9f, 1f).multLocal(1.3f));
+        dl.setDirection(new Vector3f(-0.5f, -0.3f, -0.3f).normalizeLocal());
+        sapp.getRootNode().addLight(dl);
+        dl.setName("color1");
+
+        dl2.setColor(new ColorRGBA(1.0f, 0.9f, 0.9f, 1f));
+        dl2.setDirection(lightDir2);
+        sapp.getRootNode().addLight(dl2);
+        dl2.setName("color2");
+}
     private void createTerrain() {
         Spatial terrain = sapp.getAssetManager().loadModel("Scenes/MyScene.j3o");
         RigidBodyControl rigidBodyControl = new RigidBodyControl(0);
@@ -245,6 +253,84 @@ class Game extends BaseAppState {
     protected PhysicsSpace getPhysicsSpace() {
         return bulletAppState.getPhysicsSpace();
     }
+    Float a = 1.0f;
+    Float b = 0.9f;
+    Float c = 0.9f;
+    Float d = 1.0f;
+    boolean DayOrNight = false;
+    final float timeFactor = 20;
+    
+    final float dayA = 1.0f;
+    final float dayD = 1.0f;
+    final float dayB = 0.9f;
+    final float dayC = 0.9f;
+    
+    final float nightA = 0.8f;
+    final float nightB = 0.8f;
+    final float nightC = 2.0f;
+    final float nightD = 2.0f;
+    
+    private void updateLight(){
+        
+        if (!DayOrNight) { //(a > 0.8f || b > 0.8f || c < 2f || d < 2f){
+            if (!(a <= 0.8f)){
+                a = a + ((nightA-dayA)/timeFactor);
+
+            }
+            if (!(b <= 0.8f)){
+               b = b + ((nightB-dayB)/timeFactor);
+
+            }
+            if (!(c >= 2f)){
+                //c += 0.05f;
+                c = c + ((nightC-dayC)/timeFactor);
+
+            }
+            if (!(d >= 2f)){
+                d = d + ((nightD-dayD)/timeFactor);
+
+            }
+            if( a <= 0.8f && b <= 0.8f && c >= 2f && d >= 2f ){
+                DayOrNight = true;
+                a = 0.800001f;
+                b = 0.800001f;
+                c = 1.999999f;
+                d = 1.999999f;
+            }
+        }
+        else if( DayOrNight){
+            if (!(a >= 1f)){
+                a = a + ((dayA-nightA)/timeFactor);
+            }
+            if (!(b >= 0.9f)){
+                b = b + ((dayB-nightB)/timeFactor);
+            }
+            if (!(c <= 0.9f)){
+                c = c + ((dayC-nightC)/timeFactor);
+            }
+            if (!(d <= 1.0f)){
+                d = d + ((dayD-nightD)/timeFactor);
+            }
+            if( a >= 1f && b >= 0.9f && c <= 0.9f && d <= 1f ){
+                DayOrNight = false;
+                a = 0.999999f;
+                b = 0.899999f;
+                c = 0.900001f;
+                d = 1.000001f;
+            }
+        }
+        //System.out.println(a + " "+b+" "+c+" "+ d);
+        sapp.getRootNode().removeLight(dl);
+        dl.setColor(new ColorRGBA(a, b, c, d));//multLocal(1.3f));
+        sapp.getRootNode().addLight(dl);
+        
+        sapp.getRootNode().removeLight(dl2);
+        dl2.setColor(new ColorRGBA(a, b, c, d));
+        sapp.getRootNode().addLight(dl2);
+        
+ 
+}
+    
     
     private Geometry findGeom(Spatial spatial, String name) {
         if (spatial instanceof Node) {
@@ -525,7 +611,10 @@ class Game extends BaseAppState {
         return c1.currentObject;
 
     }
+    float serverTimeSinceLightMessage = 0;
     public void serverUpdate(float tpf) {
+        serverTimeSinceLightMessage+=tpf;
+        
         for (int j=0; j<characters.size(); j++) {
             GameObject currentObject = characters.get(j).currentObject;
             if (currentObject.ghostControl!=null){
@@ -590,8 +679,15 @@ class Game extends BaseAppState {
     }
     
     
+    float light = 0;
     @Override
     public void update(float tpf) {
+        light += tpf;
+        if(light >= 0.5f){
+           updateLight(); 
+           light = 0;
+}
+        
         if (!isClient) {
             serverUpdate(tpf);
             return;

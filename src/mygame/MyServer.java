@@ -26,6 +26,7 @@ import mygame.Util.HonkMessage;
 import mygame.Util.InOutVehicleMessage;
 import mygame.Util.MyAbstractMessage;
 import mygame.Util.StartGameMessage;
+import mygame.Util.TimeUpdateMessage;
 import mygame.Util.UpdateMessage;
 
 /**
@@ -97,6 +98,10 @@ public class MyServer extends SimpleApplication {
     int framecounter = 0;
     @Override
     public void simpleUpdate(float tpf) {
+        if (game.serverTimeSinceLightMessage>5) {
+            messageQueue.enqueue(new TimeUpdateMessage(game.a, game.b, game.c, game.d, game.DayOrNight));
+            game.serverTimeSinceLightMessage = 0;
+        }
         framecounter++;
         if (framecounter>1) {
             framecounter=0;
@@ -192,7 +197,7 @@ public class MyServer extends SimpleApplication {
                     @Override
                     public Object call() throws Exception {
                         int id = game.serverMakeCharacter();
-                        StartGameMessage newMessage = new StartGameMessage(id);
+                        StartGameMessage newMessage = new StartGameMessage(id, game.a, game.b, game.c, game.d, game.DayOrNight);
                         newMessage.destinationID = source.getId();
                         messageQueue.enqueue(newMessage);
        

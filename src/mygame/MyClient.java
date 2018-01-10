@@ -29,6 +29,7 @@ import mygame.Util.InOutVehicleMessage;
 import mygame.Util.MyAbstractMessage;
 import mygame.Util.StartGameMessage;
 import mygame.Util.StopGameMessage;
+import mygame.Util.TimeUpdateMessage;
 import mygame.Util.UpdateMessage;
 
 
@@ -118,7 +119,8 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
                             UpdateMessage.class,
                             InOutVehicleMessage.class,
                             DisconnectMessage.class,
-                            HonkMessage.class);
+                            HonkMessage.class,
+                            TimeUpdateMessage.class);
 
  
             
@@ -192,13 +194,32 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
 
                         }
                         System.out.println(game.getPhysicsSpace().getVehicleList());
-  
+                        game.a = ((StartGameMessage) m).a;
+                        game.b = ((StartGameMessage) m).b;
+                        game.c = ((StartGameMessage) m).c;
+                        game.d = ((StartGameMessage) m).d;
+                        game.DayOrNight = ((StartGameMessage) m).dayOrNight;
+                        
                         fullyInitialized=true;
                         return true;
                     }
                 });
                
                 
+            }
+            else if (m instanceof TimeUpdateMessage) {
+                Future result = MyClient.this.enqueue(new Callable() {
+                    @Override
+                    public Object call() throws Exception {
+                        
+                        game.a=((TimeUpdateMessage) m).a;
+                        game.b=((TimeUpdateMessage) m).b;
+                        game.c=((TimeUpdateMessage) m).c;
+                        game.d=((TimeUpdateMessage) m).d;
+                        game.DayOrNight=((TimeUpdateMessage) m).dayOrNight;
+                     return true;
+                    }
+                });
             }
             else if (m instanceof StopGameMessage) {
                  Future result = MyClient.this.enqueue(new Callable() {
