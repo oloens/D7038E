@@ -23,7 +23,7 @@ import java.util.ArrayList;
  */
 public class Util {
     public static final int PORT = 7003;
-    public static final String HOSTNAME = "localhost";
+    public static final String HOSTNAME = "localhost"; // CHANGE THIS TO THE IP OF THE SERVER
     // register all message types there are
     public static void initialiseSerializables() {
         Serializer.registerClass(StartGameMessage.class);
