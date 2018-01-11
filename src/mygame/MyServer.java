@@ -31,7 +31,10 @@ import mygame.Util.UpdateMessage;
 
 /**
  *
- * @author olofe
+ * @author Olof E, Jonathan O, Anton E
+ * 
+ * This class originated from our Server class of Lab 3. The Server class from Lab 3 originated from an example 
+ * made by Håkan J. This mean that the original code was written by Håkan, but this class has been modified A LOT.
  */
 public class MyServer extends SimpleApplication {
     private Server server;
@@ -50,52 +53,43 @@ public class MyServer extends SimpleApplication {
 
     public MyServer(int port) {
         this.port = port;
-        //running=false;
         messageQueue = new MessageQueue();
 
     }
     protected void initGame(int numberOfConnections) {
        
     }
-
+    // sets up the server and the necessary threads and listeners
     @Override
     @SuppressWarnings("CallToPrintStackTrace")
     public void simpleInitApp() {
-        // In a game server, the server builds and maintains a perfect 
-        // copy of the game and makes use of that copy to make descisions 
+
        
 
         try {
             System.out.println("Using port " + port);
-            // create the server by opening a port
             server = Network.createServer(port);
-            server.start(); // start the server, so it starts using the port
+            server.start(); 
         } catch (IOException ex) {
             ex.printStackTrace();
             destroy();
             this.stop();
         }
         System.out.println("Server started");
-        // create a separat thread for sending "heartbeats" every now and then
         game = new Game(false);
         stateManager.attach(game);
-        /*for (int i=0; i<game.characters.size(); i++) {
-            objectCounter++;
-            Character a = game.characters.get(i);
-            a.setID(objectCounter);
-        }
-        for (int i=0; i<game.cars.size(); i++) {
-            objectCounter++;
-            Car a = game.cars.get(i);
-            a.setID(objectCounter);
-        }*/
+        
         
         new Thread(new NetWrite()).start();
         server.addMessageListener(new ServerListener(), ChangeVelocityMessage.class, StartGameMessage.class, DisconnectMessage.class);
-        // add a listener that reacts on incoming network packets
       
     }
     int framecounter = 0;
+    
+    /**
+     * Sends out updates to clients, containing positions, rotations, and other things as well
+     * 
+     */
     @Override
     public void simpleUpdate(float tpf) {
         if (game.serverTimeSinceLightMessage>5) {
@@ -121,14 +115,13 @@ public class MyServer extends SimpleApplication {
                 GameObject c1 = game.entities.get(i);
                 ids[i]=c1.getID();
                 positions[i]= c1.getLocalTranslation();
-                //walkDirections[i] = c1.characterControl.getWalkDirection();
-                //viewDirections[i] = c1.viewDirection;
+
                 viewDir2 = c1.getLocalRotation();
-                //System.out.println(viewDir2);
                 a[i]=viewDir2.getX();
                 b[i]=viewDir2.getY();
                 c[i]=viewDir2.getZ();
                 d[i]=viewDir2.getW();
+                
                 visible[i] = c1.visible;
             }
 
@@ -138,7 +131,7 @@ public class MyServer extends SimpleApplication {
 
         }
     }
-
+    //destroy the server
     @Override
     public void destroy() {
         System.out.println("Server going down");
@@ -146,8 +139,16 @@ public class MyServer extends SimpleApplication {
         super.destroy();
         System.out.println("Server down");
     }
-
-    // this class provides a handler for incoming network packets
+    /**
+     * Listens to all packets sent by clients. 
+     * Just like the client's listener, its some complicated and incomprehensible code
+     * Basically, your keypress from the client is sent here and dealt with. 
+     * 
+     * If a client disconnects and sends a disconnectmessage to the server, it is forwarded to other clients 
+     * If a new client connects, send them initial information
+     * 
+     * 
+     */
     private class ServerListener implements MessageListener<HostedConnection> {
         @Override
         public void messageReceived(final HostedConnection source, final Message m) {
@@ -228,11 +229,8 @@ public class MyServer extends SimpleApplication {
         }
     }
 
-    
-    /**
-     * Sends out a heart beat to all clients every TIME_SLEEPING seconds, after
-     * first having waited INITIAL_WAIT seconds. .
-     */
+    //pushes out all packets to clients, some are broadcasted, some are not
+    // uses synchronized messageQueue
     private class NetWrite implements Runnable {
         public void run() {
             

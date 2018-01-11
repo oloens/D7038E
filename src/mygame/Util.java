@@ -54,8 +54,8 @@ public class Util {
     }
 
     
-
-
+    // sent to new clients when they connect
+    // send out initial daytime info, and most importantly, sends out the ID that the new clients avatar is going to use!
     @Serializable
     public static class StartGameMessage extends MyAbstractMessage {
         int id;
@@ -75,6 +75,9 @@ public class Util {
         }
 
     }
+    /**
+     * daytime updates
+     */
     @Serializable
     public static class TimeUpdateMessage extends MyAbstractMessage {
         float a,b,c,d;
@@ -98,7 +101,9 @@ public class Util {
         }
 
     }
-    
+    /**
+     * sent by clients to represent the key they pressed, client tpf is not used despite of what it looks like here
+     */
     @Serializable
     public static class ChangeVelocityMessage extends MyAbstractMessage {
         int id;
@@ -118,6 +123,9 @@ public class Util {
 
 
 }
+    /**
+     * all the entity IDs, positions, and rotations are sent out to clients using this message
+     */
     @Serializable
     public static class UpdateMessage extends MyAbstractMessage {
         int[] ids;
@@ -148,6 +156,7 @@ public class Util {
             
         }
     }
+    // sent to clients to let them know if a character entered or exited a vehicle
     @Serializable
     public static class InOutVehicleMessage extends MyAbstractMessage {
         public int id;
@@ -158,6 +167,7 @@ public class Util {
         }
 
     }
+    //sent to server to annouce that you disconnected, forwarded to clients to let them know what character ID disconnected
     @Serializable
     public static class DisconnectMessage extends MyAbstractMessage {
         public int id;
@@ -168,6 +178,7 @@ public class Util {
         }
 
     }
+    //let the clients know what car just honked so they can play the sound
     @Serializable
     public static class HonkMessage extends MyAbstractMessage {
         public int id;

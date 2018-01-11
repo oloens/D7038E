@@ -13,7 +13,9 @@ import com.jme3.scene.Node;
 
 /**
  *
- * @author Anton
+ * @author Anton E, Olof E, Jonathan O
+ * 
+ * abstract class for our game objects, which are characters and cars.
  */
 public abstract class GameObject extends Node {
     public GameObject() {

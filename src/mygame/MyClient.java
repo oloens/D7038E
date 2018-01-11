@@ -35,18 +35,19 @@ import mygame.Util.UpdateMessage;
 
 /**
  *
- * @author olofe
+ * @author Olof E, Jonathan O, Anton E
+ * 
+ * This class originated from our Client class of Lab 3. The Client class from Lab 3 originated from an example 
+ * made by Håkan J. This mean that the original code was written by Håkan, but this class has been modified A LOT.
  */
 public class MyClient extends SimpleApplication implements ActionListener, AnalogListener{
     
 
-    // the connection back to the server
     private Client serverConnection;
-    // the scene contains just a rotating box
-    private final String hostname; // where the server can be found
-    private final int port; // the port att the server that we use
+    private final String hostname; 
+    private final int port; 
 
-    private MessageQueue messageQueue = new MessageQueue();
+    private MessageQueue messageQueue = new MessageQueue(); 
     private boolean running = false;
     private boolean fullyInitialized = false;
     private GameObject currentObject;
@@ -64,7 +65,6 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
     public MyClient(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
-        //running=false;
         this.game = new Game(true);
         stateManager.attach(game);
     }
@@ -86,29 +86,26 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
     
     
     
-    
+    /**
+     * set up the client and start the necessary threads, initialize keys etc
+     */
     @Override
     @SuppressWarnings("CallToPrintStackTrace")
     public void simpleInitApp() {
         initKeys();
         System.out.println("Initializing");
-        //cam.setLocation(new Vector3f(-84f, 0.0f, 720f));
-        //cam.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
         setDisplayStatView(false);
         setDisplayFps(false);
 
         try {
             System.out.println("Opening server connection");
+            
             serverConnection = Network.connectToServer(hostname, port);
+            
             System.out.println("Server is starting networking");
             System.out.println("Building scene graph");
-
-            // TODO build scene graph
-
-
             System.out.println("Adding network listener");
-            // this make the client react on messages when they arrive by
-            // calling messageReceived in ClientNetworkMessageListener
+
             serverConnection
                     .addMessageListener(new ClientNetworkMessageListener(),
                             StartGameMessage.class,
@@ -123,7 +120,6 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
  
             
             setPauseOnLostFocus(false);
-            // disable the flycam which also removes the key mappings
             getFlyByCamera().setEnabled(false);
 
             serverConnection.start();
@@ -144,12 +140,10 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
   
     @Override
     public void simpleUpdate(float tpf) {
-        //messageQueue.enqueue(new ChangeVelocityMessage());
-        //System.out.println("x = " + game.characters.get(0).characterControl.getViewDirection().x);
-        //System.out.println(" y = " + game.characters.get(0).characterControl.getViewDirection().y);
-        //System.out.println("z = " + game.characters.get(0).characterControl.getViewDirection().z);
-        //game.characters.get(0).setLocalTranslation(-50f, 10f, 50f);
+
     }
+    // on key press, send that key press to the server. 
+    // "ChangeVelocityMessage" is an inaccurate name
     @Override
     public void onAction(String name, boolean isPressed, float tpf) {
         if (!fullyInitialized) {
@@ -161,24 +155,24 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
         }
         messageQueue.enqueue(new ChangeVelocityMessage(id, name, isPressed, tpf));
         
-        //game.onAction(name, isPressed, tpf);
+        
     }
 
     @Override
     public void onAnalog(String name, float value, float tpf) {
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     private void setup(int id) {
         this.myId=id;
         this.currentObject = game.getCharacterById(id);
         System.out.println("here");
     }
-
-    // This class is a packet handler
+    //listens to packets send from the server.
+    // complicated stuff is set up from some of the messages
+    // basically it converges to server values, and if there are new clients that connected/disconnected, it adapts to that
+    
     private class ClientNetworkMessageListener
             implements MessageListener<Client> {
 
-        // this method is called whenever network packets arrive
         @Override
         public void messageReceived(Client source, final Message m) {
             if (m instanceof StartGameMessage) {
@@ -330,14 +324,13 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
             }
         }
     }
-
-    // takes down all communication channels gracefully, when called
+    //if you close down the client, tell the server and then destroy it
     @Override
     public void destroy() {
-        serverConnection.send(new DisconnectMessage(myId));
-        //serverConnection.close();
+        serverConnection.send(new DisconnectMessage(myId)); 
         super.destroy();
     }
+    //thread that pushes out the packages to the server, uses the synchronized messageQueue.
     private class NetWrite implements Runnable {
         public void run() {
             while(true) {

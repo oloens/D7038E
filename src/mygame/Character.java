@@ -15,7 +15,7 @@ import com.jme3.scene.Spatial;
 
 /**
  *
- * @author Anton
+ * @author Anton E, Olof E, Jonathan O
  */
 public class Character extends GameObject{
     
@@ -39,7 +39,10 @@ public class Character extends GameObject{
     }
 
     
-    // Taget från JmeTest
+    /** TAKEN FROM JMETESTS
+     * 
+     * Controls the character
+     */
     public void control(String binding, boolean value, float tpf){
         System.out.println("controlling character");
             if (binding.equals("Lefts")) {
@@ -75,7 +78,7 @@ public class Character extends GameObject{
           
         
     }
-    
+    // completely stops character movement
     public void stopMovement(){
         forward = false;
         backward = false;

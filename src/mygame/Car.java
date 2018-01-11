@@ -20,7 +20,7 @@ import com.jme3.scene.Spatial;
 
 /**
  *
- * @author Anton
+ * @author Anton E, Olof E, Jonathan O
  */
 @Serializable
 public class Car extends GameObject{
@@ -47,14 +47,15 @@ public class Car extends GameObject{
         createCar(carNode);
     }
     
-    
-    // Taget från JmeTests
+    /** TAKEN FROM JMETESTS
+     * 
+     * Creates a car
+     */
     private void createCar(Spatial carNode){
         System.out.println("creating car...");
         carNode.setShadowMode(RenderQueue.ShadowMode.Cast);  
         Geometry chasis = findGeom(carNode, "Car"); 
         BoundingBox box = (BoundingBox) chasis.getModelBound();
-        //carNode.setLocalTranslation(new Vector3f(0, 15, -500));
         
          //Create a hull collision shape for the chassis
         CollisionShape carHull = CollisionShapeFactory.createDynamicMeshShape(chasis);
@@ -107,7 +108,10 @@ public class Car extends GameObject{
     }
     
     
-    // Taget från JmeTests
+    /** TAKEN FROM JMETESTS
+     * 
+     * 
+     */
     private Geometry findGeom(Spatial spatial, String name) {
         if (spatial instanceof Node) {
             Node node = (Node) spatial;
@@ -126,7 +130,10 @@ public class Car extends GameObject{
         return null;
     }
     
-    // Taget från JmeTests
+    /** TAKEN FROM JMETESTS
+     * 
+     * Controls the car with steering and acceleration
+     */
     public void control(String binding, boolean value, float tpf){
         System.out.println(accelerationValue + " avalue");
         System.out.println(steeringValue + " steeringvalue");
@@ -146,7 +153,7 @@ public class Car extends GameObject{
                 steeringValue = 0;
                 }
                 carControl.steer(steeringValue);
-            } //note that our fancy car actually goes backwards..
+            } 
             else if (binding.equals("Ups")) {
                  System.out.println(value + " value");
             if (value) {
@@ -177,7 +184,7 @@ public class Car extends GameObject{
             }
         
     }
-    
+    //Stops the car movement
     public void stopMovement(){
         System.out.println("stops car");
         steeringValue = 0;
