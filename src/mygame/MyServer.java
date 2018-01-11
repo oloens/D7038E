@@ -213,6 +213,7 @@ public class MyServer extends SimpleApplication {
                        if (game.getCharacterById(((DisconnectMessage) m).id).isInVehicle) {
                            Spatial c = game.getCharacterById(((DisconnectMessage) m).id).getParent();
                            ((Car) c).occupied=false;
+                           ((Car) c).stopMovement();
                        }
                        game.getCharacterById(((DisconnectMessage) m).id).getParent().detachChild(game.getCharacterById(((DisconnectMessage) m).id));
                        game.entities.remove((game.getEntityById(((DisconnectMessage) m).id)));

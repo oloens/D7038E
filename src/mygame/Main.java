@@ -846,6 +846,7 @@ class Game extends BaseAppState {
                     //System.out.println(currentObject.getLocalTranslation()+ " carlocal");
                     //System.out.println(characterObject.getLocalTranslation() + " characterlocal");
                     ((Car) character.getParent()).occupied=false;
+                    ((Car) character.getParent()).stopMovement();
                     System.out.println(character.getLocalTranslation() + " characterlocal");
                     Node characterParent = character.getParent();
                     Vector3f parentsLocalTranslation = characterParent.getLocalTranslation();

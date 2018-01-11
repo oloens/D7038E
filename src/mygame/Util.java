@@ -23,7 +23,7 @@ import java.util.ArrayList;
  */
 public class Util {
     public static final int PORT = 7003;
-    public static final String HOSTNAME = "127.0.0.1";
+    public static final String HOSTNAME = "130.240.55.48";
     // register all message types there are
     public static void initialiseSerializables() {
         Serializer.registerClass(StartGameMessage.class);

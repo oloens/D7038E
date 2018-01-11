@@ -33,8 +33,8 @@ public class Car extends GameObject{
     boolean occupied = false;
     
     private float wheelRadius;
-    private float steeringValue = 0;
-    private float accelerationValue = 0;
+    protected float steeringValue = 0;
+    protected float accelerationValue = 0;
     
     float stiffness = 120.0f;//200=f1 car
     float compValue = 0.2f; //(lower than damp!)
@@ -182,6 +182,7 @@ public class Car extends GameObject{
         System.out.println("stops car");
         steeringValue = 0;
         accelerationValue = 0;
+        carControl.steer(steeringValue);
         carControl.brake(20f);
         carControl.accelerate(accelerationValue);
         
