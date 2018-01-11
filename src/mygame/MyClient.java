@@ -74,14 +74,12 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
         inputManager.addMapping("Ups", new KeyTrigger(KeyInput.KEY_W));
         inputManager.addMapping("Downs", new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping("Space", new KeyTrigger(KeyInput.KEY_SPACE));
-        inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_RETURN));
         inputManager.addMapping("EnterExit", new KeyTrigger(KeyInput.KEY_F));
         inputManager.addListener(this, "Lefts");
         inputManager.addListener(this, "Rights");
         inputManager.addListener(this, "Ups");
         inputManager.addListener(this, "Downs");
         inputManager.addListener(this, "Space");
-        inputManager.addListener(this, "Reset");
         inputManager.addListener(this, "EnterExit");
         
     }
@@ -199,7 +197,8 @@ public class MyClient extends SimpleApplication implements ActionListener, Analo
                         game.c = ((StartGameMessage) m).c;
                         game.d = ((StartGameMessage) m).d;
                         game.DayOrNight = ((StartGameMessage) m).dayOrNight;
-                        
+                        AudioNode noise = ((AudioNode) game.sapp.getRootNode().getChild("background_noise"));
+                        noise.play();
                         fullyInitialized=true;
                         return true;
                     }

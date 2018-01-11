@@ -151,7 +151,7 @@ public class Main extends SimpleApplication implements AnalogListener,
 }
 class Game extends BaseAppState {
     protected BulletAppState bulletAppState;
-    private SimpleApplication sapp;
+    protected SimpleApplication sapp;
     protected boolean isClient;
     private int objectCounter = 0;
 
@@ -213,12 +213,21 @@ class Game extends BaseAppState {
         createTerrain();
         buildCar(new Vector3f(-120,0,-20));
         buildCar(new Vector3f(-130,0,-30));
+        buildCar(new Vector3f(-140,0,-40));
         //buildHouse();
         //createCharacter();
         
 
         initLight();
     
+        AudioNode background_noise = new AudioNode(sapp.getAssetManager(), "Sounds/wind01.wav", DataType.Stream);
+        sapp.getRootNode().attachChild(background_noise);
+        background_noise.setPositional(false);
+        background_noise.setLooping(true);
+        background_noise.setVolume(1);
+        background_noise.setName("background_noise");
+
+        
 
     }
     
